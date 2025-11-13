@@ -1,4 +1,4 @@
-# InnovateHer - Hackathon Dashboard (MERN Stack)
+# InnovateHer - Hackathon Dashboard
 
 A full-stack MERN (MongoDB, Express, React, Node.js) application for managing hackathon projects and assigning judges to them. Features a modern drag-and-drop interface for intuitive judge assignment.
 
@@ -222,38 +222,6 @@ InnovateHer/
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the ISC License.
-
-## 🐛 Troubleshooting
-
-### MongoDB Connection Issues
-- Ensure MongoDB is running locally or MongoDB Atlas connection string is correct
-- Check firewall settings if using MongoDB Atlas
-- Verify environment variables are set correctly
-
-### CORS Issues
-- Ensure the backend CORS configuration allows requests from the frontend URL
-- Check that the API URL in the frontend matches the backend URL
-
-### Port Conflicts
-- Change the port in the `.env` file if port 5000 is already in use
-- Update the Vite proxy configuration if the backend port changes
-
-## 🔮 Future Enhancements
-
-- [ ] Judge profile modal/page with detailed information
-- [ ] Remove judges from projects via UI
-- [ ] Add new projects and judges through the UI
-- [ ] Search and filter functionality
-- [ ] Validation for minimum 2 judges per project
-- [ ] User authentication and authorization
-- [ ] Real-time updates using WebSockets
-- [ ] Export project and judge data
-- [ ] Email notifications for judge assignments
-
 ## 📞 Support
 
 For issues and questions, please open an issue on the repository.
