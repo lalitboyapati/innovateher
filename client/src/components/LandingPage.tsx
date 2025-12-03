@@ -93,16 +93,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
                     <div className="absolute top-32 left-1/2 transform -translate-x-1/2 w-36 h-48 rounded-t-full border-4 border-black" style={{ backgroundColor: '#D4A5A5', zIndex: 3 }}>
                       <div className="w-full h-full rounded-t-full bg-white border-2 border-black mt-2"></div>
                     </div>
-                    {/* Laptop in hands */}
-                    <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 z-10">
-                      <div className="bg-blue-100 rounded p-2 border-2 border-black shadow-lg">
-                        <div className="bg-white rounded w-18 h-12 flex items-center justify-center border border-gray-300">
-                          <svg className="w-10 h-10" style={{ color: '#D4A5A5' }} fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -168,21 +158,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
                     {/* Body/Dress - flowing queen dress */}
                     <div className="absolute top-32 left-1/2 transform -translate-x-1/2 w-36 h-48 rounded-t-full border-4 border-black" style={{ backgroundColor: '#D4A5A5', zIndex: 3 }}>
                       <div className="w-full h-full rounded-t-full bg-white border-2 border-black mt-2"></div>
-                    </div>
-                    {/* Scoring sheet in hands */}
-                    <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 z-10">
-                      <div className="bg-yellow-50 rounded p-2 border-2 border-black shadow-lg">
-                        <div className="bg-white rounded p-2 w-18 h-14 flex flex-col gap-1 border border-gray-300">
-                          <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 border border-gray-400 rounded"></div>
-                            <div className="w-12 h-1 bg-gray-300 rounded"></div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 border border-gray-400 rounded"></div>
-                            <div className="w-12 h-1 bg-gray-300 rounded"></div>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -253,17 +228,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
                     {/* Body/Dress - flowing queen dress */}
                     <div className="absolute top-32 left-1/2 transform -translate-x-1/2 w-36 h-48 rounded-t-full border-4 border-black" style={{ backgroundColor: '#D4A5A5', zIndex: 3 }}>
                       <div className="w-full h-full rounded-t-full bg-white border-2 border-black mt-2"></div>
-                    </div>
-                    {/* Dashboard/control panel in hands */}
-                    <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 z-10">
-                      <div className="bg-blue-50 rounded p-2 border-2 border-black shadow-lg">
-                        <div className="grid grid-cols-2 gap-1 bg-white rounded p-1 border border-gray-300 w-18 h-14">
-                          <div className="bg-blue-400 rounded"></div>
-                          <div className="bg-blue-400 rounded"></div>
-                          <div className="bg-blue-400 rounded"></div>
-                          <div className="bg-blue-400 rounded"></div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
