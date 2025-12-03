@@ -2,6 +2,9 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Project from '../models/Project.js';
 import Judge from '../models/Judge.js';
+import Track from '../models/Track.js';
+import RubricConfig from '../models/RubricConfig.js';
+import User from '../models/User.js';
 
 dotenv.config();
 
@@ -14,7 +17,83 @@ const seedData = async () => {
     // Clear existing data
     await Project.deleteMany({});
     await Judge.deleteMany({});
+    await Track.deleteMany({});
+    await RubricConfig.deleteMany({});
     console.log('Cleared existing data');
+
+    // Create initial tracks
+    const tracks = await Track.insertMany([
+      {
+        name: 'Purdue',
+        category: 'Purdue',
+        description: 'Purdue-focused projects and innovations',
+        minJudges: 3,
+        maxJudges: 4,
+      },
+      {
+        name: 'Mind Matters',
+        category: 'Mind Matters',
+        description: 'Mental health and wellness innovations',
+        minJudges: 3,
+        maxJudges: 4,
+      },
+      {
+        name: 'Finance Forward',
+        category: 'Finance Forward',
+        description: 'Financial technology and innovation',
+        minJudges: 3,
+        maxJudges: 4,
+      },
+      {
+        name: 'Cultural Connect',
+        category: 'Cultural Connect',
+        description: 'Cultural connection and diversity initiatives',
+        minJudges: 3,
+        maxJudges: 4,
+      },
+      {
+        name: 'Art+Tech Fusion',
+        category: 'Art+Tech Fusion',
+        description: 'Art and technology fusion projects',
+        minJudges: 3,
+        maxJudges: 4,
+      },
+    ]);
+    console.log('Created initial tracks');
+
+    // Create rubric configuration with initial weights
+    const rubricConfig = await RubricConfig.create({
+      globalRubric: {
+        techStack: {
+          name: 'Tech Stack',
+          weight: 0.2,
+          enabled: true,
+        },
+        design: {
+          name: 'Design',
+          weight: 0.2,
+          enabled: true,
+        },
+        growthPotential: {
+          name: 'Growth Potential',
+          weight: 0.2,
+          enabled: true,
+        },
+        presentation: {
+          name: 'Presentation',
+          weight: 0.2,
+          enabled: true,
+        },
+        inspiration: {
+          name: 'Inspiration',
+          weight: 0.2,
+          enabled: true,
+        },
+      },
+      maxJudgesPerProject: 4,
+      minJudgesPerProject: 3,
+    });
+    console.log('Created rubric configuration');
 
     // Create judges
     const judges = await Judge.insertMany([
@@ -28,6 +107,15 @@ const seedData = async () => {
     ]);
     console.log('Created judges');
 
+    // Create a test participant user for seed projects
+    const testParticipant = await User.create({
+      name: 'Test Participant',
+      email: 'participant@test.com',
+      password: 'password123',
+      role: 'participant',
+    });
+    console.log('Created test participant user');
+
     // Create projects with assigned judges
     const projects = await Project.insertMany([
       {
@@ -35,14 +123,18 @@ const seedData = async () => {
         category: 'Healthcare Innovation',
         description:
           'A telemedicine platform that connects rural patients with specialists using AI-powered diagnostics and real-time video consultations.',
+        participantId: testParticipant._id,
         assignedJudges: [judges[0]._id, judges[1]._id, judges[2]._id],
+        status: 'submitted',
       },
       {
         name: 'EcoTech Solutions',
         category: 'Sustainability',
         description:
           'A carbon footprint tracking app that gamifies sustainable living and connects users with local eco-friendly businesses.',
+        participantId: testParticipant._id,
         assignedJudges: [judges[3]._id],
+        status: 'submitted',
       },
     ]);
 
