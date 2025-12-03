@@ -4,6 +4,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import projectRoutes from './routes/projects.js';
 import judgeRoutes from './routes/judges.js';
+import authRoutes from './routes/auth.js';
+import trackRoutes from './routes/tracks.js';
+import scoreRoutes from './routes/scores.js';
+import assignmentRoutes from './routes/assignments.js';
+import rubricRoutes from './routes/rubric.js';
 
 dotenv.config();
 
@@ -16,8 +21,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/judges', judgeRoutes);
+app.use('/api/tracks', trackRoutes);
+app.use('/api/scores', scoreRoutes);
+app.use('/api/assignments', assignmentRoutes);
+app.use('/api/rubric', rubricRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

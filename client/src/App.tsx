@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import {
   DndContext,
   DragEndEvent,
@@ -9,6 +10,7 @@ import {
   useSensors,
   closestCenter,
 } from '@dnd-kit/core';
+import { LandingPage } from './components/LandingPage';
 import { ProjectCard } from './components/ProjectCard';
 import { UnassignedJudgesPanel } from './components/UnassignedJudgesPanel';
 import { QuickActionsPanel } from './components/QuickActionsPanel';
@@ -18,7 +20,8 @@ import { AddProjectModal } from './components/AddProjectModal';
 import { Project, Judge } from './types';
 import { projectsAPI, judgesAPI } from './services/api';
 
-function App() {
+// Dashboard Component (existing App logic)
+function Dashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [unassignedJudges, setUnassignedJudges] = useState<Judge[]>([]);
   const [activeJudge, setActiveJudge] = useState<Judge | null>(null);
@@ -288,5 +291,19 @@ function App() {
   );
 }
 
-export default App;
+// Main App Component with Routing
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/admin" element={<Dashboard />} />
+        <Route path="/judge" element={<Dashboard />} />
+        <Route path="/participant" element={<Dashboard />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
+  );
+}
 
+export default App;

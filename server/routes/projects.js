@@ -1,13 +1,42 @@
 import express from 'express';
 import Project from '../models/Project.js';
 import Judge from '../models/Judge.js';
+import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Get all projects with assigned judges
 router.get('/', async (req, res) => {
   try {
-    const projects = await Project.find().populate('assignedJudges').sort({ createdAt: -1 });
+    let query = {};
+    
+    // If authenticated, apply role-based filtering
+    if (req.headers.authorization) {
+      try {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        if (token) {
+          const jwt = await import('jsonwebtoken');
+          const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+          const User = (await import('../models/User.js')).default;
+          const decoded = jwt.default.verify(token, JWT_SECRET);
+          const user = await User.findById(decoded.userId);
+          
+          if (user && user.role === 'participant') {
+            query.participantId = user._id;
+          }
+        }
+      } catch (authError) {
+        // If auth fails, just show all projects (public view)
+      }
+    }
+    
+    const projects = await Project.find(query)
+      .populate('assignedJudges')
+      .populate('participantId', 'name email')
+      .populate('trackId')
+      .sort({ createdAt: -1 });
+    
     res.json(projects);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -28,17 +57,39 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create a new project
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { name, category, description, assignedJudges } = req.body;
+    const { name, category, description, githubUrl, demoUrl, trackId } = req.body;
+    
+    // Participants can only create projects for themselves
+    const participantId = req.user.role === 'participant' 
+      ? req.user._id 
+      : req.body.participantId || req.user._id;
+    
     const project = new Project({
       name,
       category,
       description,
-      assignedJudges: assignedJudges || [],
+      participantId,
+      trackId: trackId || null,
+      githubUrl: githubUrl || '',
+      demoUrl: demoUrl || '',
+      assignedJudges: [],
+      status: 'submitted',
     });
+    
     const savedProject = await project.save();
-    const populatedProject = await Project.findById(savedProject._id).populate('assignedJudges');
+    const populatedProject = await Project.findById(savedProject._id)
+      .populate('assignedJudges')
+      .populate('participantId', 'name email')
+      .populate('trackId');
+    
+    // Update user's projects array
+    if (req.user.role === 'participant') {
+      req.user.projects.push(savedProject._id);
+      await req.user.save();
+    }
+    
     res.status(201).json(populatedProject);
   } catch (error) {
     res.status(400).json({ message: error.message });

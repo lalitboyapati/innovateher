@@ -17,7 +17,13 @@ router.get('/', async (req, res) => {
 // Get unassigned judges
 router.get('/unassigned', async (req, res) => {
   try {
-    const judges = await Judge.find({ assignedToProjectId: null }).sort({ createdAt: -1 });
+    // Updated to check currentProjectsCount instead of assignedToProjectId
+    const judges = await Judge.find({ 
+      $or: [
+        { currentProjectsCount: { $lt: 4 } },
+        { currentProjectsCount: { $exists: false } }
+      ]
+    }).sort({ createdAt: -1 });
     res.json(judges);
   } catch (error) {
     res.status(500).json({ message: error.message });
