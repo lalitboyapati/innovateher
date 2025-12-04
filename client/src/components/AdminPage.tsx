@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   DndContext,
   DragEndEvent,
@@ -10,19 +10,20 @@ import {
   useSensors,
   closestCenter,
 } from '@dnd-kit/core';
-import { LandingPage } from './components/LandingPage';
-import { AdminPage } from './components/AdminPage';
-import { ProjectCard } from './components/ProjectCard';
-import { UnassignedJudgesPanel } from './components/UnassignedJudgesPanel';
-import { QuickActionsPanel } from './components/QuickActionsPanel';
-import { JudgeCard } from './components/JudgeCard';
-import { AddJudgeModal } from './components/AddJudgeModal';
-import { AddProjectModal } from './components/AddProjectModal';
-import { Project, Judge } from './types';
-import { projectsAPI, judgesAPI } from './services/api';
+import { ProjectCard } from './ProjectCard';
+import { UnassignedJudgesPanel } from './UnassignedJudgesPanel';
+import { QuickActionsPanel } from './QuickActionsPanel';
+import { JudgeCard } from './JudgeCard';
+import { AddJudgeModal } from './AddJudgeModal';
+import { AddProjectModal } from './AddProjectModal';
+import { UserManagement } from './UserManagement';
+import { Project, Judge } from '../types';
+import { projectsAPI, judgesAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
-// Dashboard Component (existing App logic)
-function Dashboard() {
+export const AdminPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [unassignedJudges, setUnassignedJudges] = useState<Judge[]>([]);
   const [activeJudge, setActiveJudge] = useState<Judge | null>(null);
@@ -30,6 +31,7 @@ function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isAddJudgeModalOpen, setIsAddJudgeModalOpen] = useState(false);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users'>('dashboard');
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -40,9 +42,11 @@ function Dashboard() {
   );
 
   // Fetch data on component mount
-  useEffect(() => {
-    fetchData();
-  }, []);
+  React.useEffect(() => {
+    if (activeTab === 'dashboard') {
+      fetchData();
+    }
+  }, [activeTab]);
 
   const fetchData = async () => {
     try {
@@ -195,30 +199,12 @@ function Dashboard() {
     alert(`Judge Profile:\n\nName: ${judge.name}\nSpecialty: ${judge.specialty}\nInitials: ${judge.initials}`);
   };
 
-  if (loading) {
+  if (loading && activeTab === 'dashboard') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-        <div className="text-center max-w-md">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">{error}</p>
-            <button
-              onClick={fetchData}
-              className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-            >
-              Retry
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -231,41 +217,104 @@ function Dashboard() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Hackathon Dashboard</h1>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Projects */}
-            <div className="lg:col-span-2 space-y-6">
-              {projects.length === 0 ? (
-                <div className="bg-white rounded-lg p-8 border border-gray-200 text-center">
-                  <p className="text-gray-500">No projects found. Create a project to get started.</p>
-                </div>
-              ) : (
-                projects.map((project) => (
-                  <ProjectCard
-                    key={project._id}
-                    project={project}
-                    onJudgeClick={handleJudgeClick}
-                    onRemoveJudge={removeJudgeFromProject}
-                  />
-                ))
-              )}
-            </div>
-
-            {/* Right Column - Judges and Quick Actions */}
-            <div className="space-y-6">
-              <UnassignedJudgesPanel
-                judges={unassignedJudges}
-                onJudgeClick={handleJudgeClick}
-              />
-              <QuickActionsPanel
-                onAddJudge={() => setIsAddJudgeModalOpen(true)}
-                onAddProject={() => setIsAddProjectModalOpen(true)}
-              />
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                <p className="text-sm text-gray-500 mt-1">Manage projects, judges, and users</p>
+              </div>
+              <button
+                onClick={() => navigate('/')}
+                className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                ← Back to Home
+              </button>
             </div>
           </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-8">
+            <div className="flex space-x-8">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'dashboard'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'users'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                User Management
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="max-w-7xl mx-auto px-8 py-8">
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+
+          {activeTab === 'dashboard' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column - Projects */}
+              <div className="lg:col-span-2 space-y-6">
+                {projects.length === 0 ? (
+                  <div className="bg-white rounded-lg p-8 border border-gray-200 text-center">
+                    <p className="text-gray-500">No projects found. Create a project to get started.</p>
+                  </div>
+                ) : (
+                  projects.map((project) => (
+                    <ProjectCard
+                      key={project._id}
+                      project={project}
+                      onJudgeClick={handleJudgeClick}
+                      onRemoveJudge={removeJudgeFromProject}
+                    />
+                  ))
+                )}
+              </div>
+
+              {/* Right Column - Judges and Quick Actions */}
+              <div className="space-y-6">
+                <UnassignedJudgesPanel
+                  judges={unassignedJudges}
+                  onJudgeClick={handleJudgeClick}
+                />
+                <QuickActionsPanel
+                  onAddJudge={() => setIsAddJudgeModalOpen(true)}
+                  onAddProject={() => setIsAddProjectModalOpen(true)}
+                />
+              </div>
+            </div>
+          ) : (
+            <div>
+              {user ? (
+                <UserManagement currentUser={user} />
+              ) : (
+                <div className="bg-white rounded-lg p-8 border border-gray-200 text-center">
+                  <p className="text-gray-500">Please log in to manage users.</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <DragOverlay>
@@ -275,36 +324,20 @@ function Dashboard() {
             </div>
           ) : null}
         </DragOverlay>
-      </div>
 
-      {/* Modals */}
-      <AddJudgeModal
-        isOpen={isAddJudgeModalOpen}
-        onClose={() => setIsAddJudgeModalOpen(false)}
-        onAdd={handleAddJudge}
-      />
-      <AddProjectModal
-        isOpen={isAddProjectModalOpen}
-        onClose={() => setIsAddProjectModalOpen(false)}
-        onAdd={handleAddProject}
-      />
+        {/* Modals */}
+        <AddJudgeModal
+          isOpen={isAddJudgeModalOpen}
+          onClose={() => setIsAddJudgeModalOpen(false)}
+          onAdd={handleAddJudge}
+        />
+        <AddProjectModal
+          isOpen={isAddProjectModalOpen}
+          onClose={() => setIsAddProjectModalOpen(false)}
+          onAdd={handleAddProject}
+        />
+      </div>
     </DndContext>
   );
-}
+};
 
-// Main App Component with Routing
-function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/judge" element={<Dashboard />} />
-        <Route path="/participant" element={<Dashboard />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
-  );
-}
-
-export default App;
