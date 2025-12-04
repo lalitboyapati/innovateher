@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Hackathon from '../models/Hackathon.js';
 import { requireAnyAuth, requireAdmin, requireParticipant, requireJudge } from '../middleware/auth.js';
 import { getDefaultHackathonId, initializeDefaultHackathon } from '../utils/initializeDefaultHackathon.js';
+import { autoAssignJudgesToProject } from '../utils/autoAssignJudges.js';
 
 const router = express.Router();
 
@@ -93,6 +94,20 @@ router.post('/', requireParticipant, async (req, res) => {
       assignedJudges: [],
     });
     const savedProject = await project.save();
+    
+    // Auto-assign judges based on specialty matching
+    try {
+      await autoAssignJudgesToProject(savedProject._id);
+      // Reload project to get assigned judges
+      const updatedProject = await Project.findById(savedProject._id);
+      if (updatedProject) {
+        savedProject.assignedJudges = updatedProject.assignedJudges;
+      }
+    } catch (assignError) {
+      console.error('Error auto-assigning judges:', assignError);
+      // Continue even if auto-assignment fails
+    }
+    
     const populatedProject = await Project.findById(savedProject._id)
       .populate('assignedJudges', 'firstName lastName email specialty initials')
       .populate('createdBy', 'firstName lastName email')
