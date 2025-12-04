@@ -16,6 +16,10 @@ const projectSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  githubUrl: {
+    type: String,
+    trim: true,
+  },
   hackathonId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Hackathon',

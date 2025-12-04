@@ -7,6 +7,7 @@ import projectRoutes from './routes/projects.js';
 import judgeRoutes from './routes/judges.js';
 import hackathonRoutes from './routes/hackathons.js';
 import adminRoutes from './routes/admin.js';
+import { initializeDefaultHackathon } from './utils/initializeDefaultHackathon.js';
 
 dotenv.config();
 
@@ -33,8 +34,12 @@ app.get('/api/health', (req, res) => {
 // Connect to MongoDB
 mongoose
   .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/innovateher')
-  .then(() => {
+  .then(async () => {
     console.log('Connected to MongoDB');
+    
+    // Initialize default hackathon
+    await initializeDefaultHackathon();
+    
     const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });

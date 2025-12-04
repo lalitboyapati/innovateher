@@ -12,15 +12,22 @@ const generateToken = (userId) => {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
-// Register a new user (participants only)
+// Register a new user (participants and judges only, not admins)
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, firstName, lastName } = req.body;
+    const { email, password, firstName, lastName, role, specialty } = req.body;
 
     // Validate required fields
-    if (!email || !password || !firstName || !lastName) {
+    if (!email || !password || !firstName || !lastName || !role) {
       return res.status(400).json({ 
-        message: 'Email, password, firstName, and lastName are required' 
+        message: 'Email, password, firstName, lastName, and role are required' 
+      });
+    }
+
+    // Only allow participant and judge registration (not admin)
+    if (role !== 'participant' && role !== 'judge') {
+      return res.status(400).json({ 
+        message: 'Only participants and judges can register. Admin accounts must be created by existing admins.' 
       });
     }
 
@@ -30,13 +37,14 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
-    // Only allow participant registration
+    // Create user
     const user = new User({
       email,
       password,
       firstName,
       lastName,
-      role: 'participant',
+      role,
+      specialty: role === 'judge' ? specialty : undefined,
     });
 
     await user.save();
@@ -54,6 +62,7 @@ router.post('/register', async (req, res) => {
         lastName: user.lastName,
         fullName: `${user.firstName} ${user.lastName}`,
         role: user.role,
+        specialty: user.specialty,
       },
     });
   } catch (error) {

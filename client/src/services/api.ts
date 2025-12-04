@@ -11,6 +11,20 @@ const api = axios.create({
   },
 });
 
+// Add request interceptor to attach auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Projects API
 export const projectsAPI = {
   getAll: async (): Promise<Project[]> => {
@@ -77,6 +91,70 @@ export const judgesAPI = {
 
   delete: async (id: string): Promise<void> => {
     await api.delete(`/judges/${id}`);
+  },
+};
+
+// Hackathons API
+export const hackathonsAPI = {
+  getAll: async () => {
+    const response = await api.get('/hackathons');
+    return response.data;
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get(`/hackathons/${id}`);
+    return response.data;
+  },
+
+  getActive: async () => {
+    const response = await api.get('/hackathons');
+    const hackathons = response.data || [];
+    // Find active hackathon, prioritize "InnovateHer" default hackathon
+    if (hackathons.length === 0) {
+      return null;
+    }
+    // First try to find the default "InnovateHer" hackathon
+    const innovateHer = hackathons.find((h: any) => h.name === 'InnovateHer');
+    if (innovateHer) {
+      return innovateHer;
+    }
+    // Otherwise find active hackathon or get the most recent one
+    const active = hackathons.find((h: any) => h.status === 'active');
+    return active || hackathons[0] || null;
+  },
+};
+
+// Auth API
+export const authAPI = {
+  login: async (email: string, password: string) => {
+    const response = await api.post('/auth/login', { email, password });
+    return response.data;
+  },
+
+  register: async (name: string, email: string, password: string, role: string, specialty?: string) => {
+    // Split name into firstName and lastName
+    const nameParts = name.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    
+    const response = await api.post('/auth/register', {
+      email,
+      password,
+      firstName,
+      lastName,
+      role,
+      specialty,
+    });
+    return response.data;
+  },
+
+  getMe: async (token: string) => {
+    const response = await api.get('/auth/me', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
   },
 };
 

@@ -51,6 +51,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('token', authToken);
       setToken(authToken);
       setUser(userData);
+      return response; // Return response so we can access user role
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Login failed');
     }

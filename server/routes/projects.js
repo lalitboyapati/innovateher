@@ -1,7 +1,9 @@
 import express from 'express';
 import Project from '../models/Project.js';
 import User from '../models/User.js';
+import Hackathon from '../models/Hackathon.js';
 import { requireAnyAuth, requireAdmin, requireParticipant, requireJudge } from '../middleware/auth.js';
+import { getDefaultHackathonId, initializeDefaultHackathon } from '../utils/initializeDefaultHackathon.js';
 
 const router = express.Router();
 
@@ -41,19 +43,51 @@ router.get('/:id', requireAnyAuth, async (req, res) => {
 // Create a new project (participant or admin)
 router.post('/', requireParticipant, async (req, res) => {
   try {
-    const { name, category, description, hackathonId, status } = req.body;
+    const { name, category, description, hackathonId, status, githubUrl } = req.body;
     
-    if (!name || !category || !description || !hackathonId) {
+    if (!name || !category || !description) {
       return res.status(400).json({ 
-        message: 'Name, category, description, and hackathonId are required' 
+        message: 'Name, category, and description are required' 
       });
+    }
+
+    // If no hackathonId provided, use the default InnovateHer hackathon
+    let projectHackathonId = hackathonId;
+    if (!projectHackathonId) {
+      // Try to get the default InnovateHer hackathon
+      projectHackathonId = await getDefaultHackathonId();
+      
+      // If default hackathon doesn't exist yet, try to initialize it
+      if (!projectHackathonId) {
+        const defaultHackathon = await initializeDefaultHackathon();
+        if (defaultHackathon) {
+          projectHackathonId = defaultHackathon._id;
+        } else {
+          // Last resort: create it with the current user as creator
+          const now = new Date();
+          const endDate = new Date(now);
+          endDate.setFullYear(endDate.getFullYear() + 1);
+          
+          const newHackathon = new Hackathon({
+            name: 'InnovateHer',
+            description: 'The default hackathon for all InnovateHer project submissions. Join us in creating innovative solutions!',
+            startDate: now,
+            endDate: endDate,
+            status: 'active',
+            createdBy: req.user._id,
+          });
+          const savedHackathon = await newHackathon.save();
+          projectHackathonId = savedHackathon._id;
+        }
+      }
     }
 
     const project = new Project({
       name,
       category,
       description,
-      hackathonId,
+      githubUrl,
+      hackathonId: projectHackathonId,
       createdBy: req.user._id,
       status: status || 'draft',
       assignedJudges: [],
@@ -72,7 +106,7 @@ router.post('/', requireParticipant, async (req, res) => {
 // Update a project (participant can update own project, admin can update any)
 router.put('/:id', requireAnyAuth, async (req, res) => {
   try {
-    const { name, category, description, assignedJudges, status } = req.body;
+    const { name, category, description, assignedJudges, status, githubUrl } = req.body;
     
     // Get the current project to compare old vs new assignedJudges
     const oldProject = await Project.findById(req.params.id);
@@ -95,6 +129,9 @@ router.put('/:id', requireAnyAuth, async (req, res) => {
 
     // Update the project
     const updateData = { name, category, description };
+    if (githubUrl !== undefined) {
+      updateData.githubUrl = githubUrl;
+    }
     if (assignedJudges !== undefined) {
       updateData.assignedJudges = assignedJudges;
     }

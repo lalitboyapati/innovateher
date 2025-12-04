@@ -12,7 +12,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
     if (onRoleSelect) {
       onRoleSelect(role);
     } else {
-      navigate(`/${role}`);
+      navigate(`/login?role=${role}`);
     }
   };
 
