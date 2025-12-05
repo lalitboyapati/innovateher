@@ -124,6 +124,34 @@ export const hackathonsAPI = {
   },
 };
 
+// Admin API
+export const adminAPI = {
+  getAllUsers: async (role?: string): Promise<any[]> => {
+    const params = role ? { role } : {};
+    const response = await api.get('/admin/users', { params });
+    return response.data;
+  },
+
+  createAdmin: async (userData: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+  }): Promise<any> => {
+    const response = await api.post('/admin/admins', userData);
+    return response.data;
+  },
+
+  updateUser: async (userId: string, userData: any): Promise<any> => {
+    const response = await api.put(`/admin/users/${userId}`, userData);
+    return response.data;
+  },
+
+  deleteUser: async (userId: string): Promise<void> => {
+    await api.delete(`/admin/users/${userId}`);
+  },
+};
+
 // Auth API
 export const authAPI = {
   login: async (email: string, password: string) => {

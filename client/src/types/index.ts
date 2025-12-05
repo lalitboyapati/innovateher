@@ -37,6 +37,7 @@ export interface User {
   role: 'admin' | 'judge' | 'participant';
   specialty?: string;
   initials?: string;
+  fullName?: string;
   judgeProfile?: string | Judge;
   projects?: string[] | Project[];
   trackId?: string | Track;
@@ -87,4 +88,3 @@ export interface LeaderboardEntry {
   averageScore: number;
   judgesCount: number;
 }
-

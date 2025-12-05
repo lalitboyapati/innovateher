@@ -1,9 +1,34 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Heart, Lightbulb, Briefcase, Crown } from 'lucide-react';
 
 interface LandingPageProps {
   onRoleSelect?: (role: string) => void;
 }
+
+// Queen playing card icon component
+const QueenIcon = () => (
+  <svg width="120" height="160" viewBox="0 0 120 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Crown */}
+    <path d="M40 20 L45 30 L50 20 L55 30 L60 15 L65 30 L70 20 L75 30 L80 20 L80 35 L40 35 Z" fill="#c89999" stroke="#000" strokeWidth="2"/>
+    {/* Head */}
+    <circle cx="60" cy="50" r="20" fill="white" stroke="#000" strokeWidth="3"/>
+    {/* Hair */}
+    <path d="M42 45 Q40 35 50 32 Q55 30 60 30 Q65 30 70 32 Q80 35 78 45" fill="#000" stroke="#000" strokeWidth="2"/>
+    {/* Body/Dress */}
+    <path d="M60 70 L40 75 L35 95 L35 120 L42 140 L78 140 L85 120 L85 95 L80 75 Z" fill="white" stroke="#000" strokeWidth="3"/>
+    {/* Dress Details */}
+    <path d="M50 85 L50 130" stroke="#c89999" strokeWidth="2"/>
+    <path d="M60 85 L60 130" stroke="#c89999" strokeWidth="2"/>
+    <path d="M70 85 L70 130" stroke="#c89999" strokeWidth="2"/>
+    {/* Arms */}
+    <path d="M40 75 L25 90 L28 95 L43 85" fill="white" stroke="#000" strokeWidth="3"/>
+    <path d="M80 75 L95 90 L92 95 L77 85" fill="white" stroke="#000" strokeWidth="3"/>
+    {/* Flower in hand */}
+    <circle cx="23" cy="90" r="5" fill="#c89999" stroke="#000" strokeWidth="2"/>
+    <circle cx="97" cy="90" r="5" fill="#c89999" stroke="#000" strokeWidth="2"/>
+  </svg>
+);
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
   const navigate = useNavigate();
@@ -17,228 +42,104 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onRoleSelect }) => {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#D4A5A5' }}>
-      <div className="max-w-7xl mx-auto px-8 py-12">
-        {/* Logo Section - Centered */}
-        <div className="text-center mb-16">
-          <div className="mb-12">
-            <h1 className="text-7xl md:text-9xl font-serif italic text-white mb-3 leading-tight" style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontWeight: 400 }}>
-              innovate
-            </h1>
-            <h2 className="text-7xl md:text-9xl font-bold text-white tracking-tight leading-tight" style={{ fontFamily: '"Courier New", Courier, monospace' }}>
-              {'</HER>'}
-            </h2>
-          </div>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ backgroundColor: '#d4a5a5' }}>
+      {/* Header */}
+      <div className="text-center mb-12">
+        <h1 className="text-white mb-4" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '4rem', lineHeight: '1' }}>
+          innovate
+        </h1>
+        <h2 className="text-white mb-8" style={{ fontFamily: 'Georgia, serif', fontWeight: '700', fontSize: '3rem', lineHeight: '1', letterSpacing: '0.05em' }}>
+          {'</HER>'}
+        </h2>
+        <p className="text-white" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '2rem' }}>
+          are you ready?
+        </p>
+      </div>
+
+      {/* Role Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full">
+        {/* Participant Card */}
+        <div 
+          className="bg-white rounded-lg p-8 relative flex flex-col items-center cursor-pointer transition hover:scale-105" 
+          style={{ border: '4px solid #000', minHeight: '400px' }}
+          onClick={() => handleRoleSelect('participant')}
+        >
+          {/* Corner Icons */}
+          <Briefcase className="absolute top-4 left-4 w-8 h-8" style={{ color: '#c89999' }} />
+          <Briefcase className="absolute top-4 right-4 w-8 h-8" style={{ color: '#c89999' }} />
+          <Briefcase className="absolute bottom-16 left-4 w-8 h-8" style={{ color: '#c89999' }} />
+          <Briefcase className="absolute bottom-16 right-4 w-8 h-8" style={{ color: '#c89999' }} />
           
-          {/* "Are you ready?" text */}
-          <p className="text-4xl md:text-5xl font-light text-white mt-12 italic" style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontWeight: 300 }}>
-            are you ready?
-          </p>
+          {/* Crown */}
+          <div className="mt-8 mb-6">
+            <Crown className="w-12 h-12" style={{ color: '#c89999' }} />
+          </div>
+
+          {/* Queen Icon */}
+          <div className="flex-1 flex items-center justify-center">
+            <QueenIcon />
+          </div>
+
+          {/* Label */}
+          <h3 className="mt-4" style={{ fontFamily: 'Georgia, serif', color: '#333' }}>
+            Participant
+          </h3>
         </div>
 
-        {/* Cards Container */}
-        <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 mt-16">
-          {/* Participant Card - Queen of Diamonds */}
-          <div 
-            className="relative cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-            onClick={() => handleRoleSelect('participant')}
-          >
-            <div className="bg-white rounded-lg shadow-2xl w-72 h-[500px] flex flex-col border-4 border-black relative overflow-hidden">
-              {/* Top Left Corner - Diamond */}
-              <div className="absolute top-3 left-3 text-3xl font-bold" style={{ color: '#D4A5A5' }}>
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                </svg>
-              </div>
-              <div className="absolute top-2 left-2 text-xl font-bold" style={{ color: '#D4A5A5' }}>Q</div>
-              
-              {/* Top Right Corner - Diamond */}
-              <div className="absolute top-3 right-3 text-3xl font-bold" style={{ color: '#D4A5A5' }}>
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                </svg>
-              </div>
-              
-              {/* Bottom Left Corner - Diamond (upside down) */}
-              <div className="absolute bottom-3 left-3 text-3xl font-bold rotate-180" style={{ color: '#D4A5A5' }}>
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                </svg>
-              </div>
-              <div className="absolute bottom-2 left-2 text-xl font-bold rotate-180" style={{ color: '#D4A5A5' }}>Q</div>
-              
-              {/* Bottom Right Corner - Diamond (upside down) */}
-              <div className="absolute bottom-3 right-3 text-3xl font-bold rotate-180" style={{ color: '#D4A5A5' }}>
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                </svg>
-              </div>
-              
-              {/* Queen Figure - Centered */}
-              <div className="flex-1 flex items-center justify-center mt-6 mb-6">
-                <div className="relative w-full h-full flex items-center justify-center">
-                  {/* Queen silhouette with crown */}
-                  <div className="text-center relative" style={{ width: '180px', height: '280px' }}>
-                    {/* Crown */}
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-10">
-                      <svg className="w-20 h-20" style={{ color: '#D4A5A5' }} fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 2c0 1.11-.89 2-2 2H7c-1.11 0-2-.89-2-2v-1h14v1z"/>
-                      </svg>
-                    </div>
-                    {/* Head/face circle */}
-                    <div className="absolute top-12 left-1/2 transform -translate-x-1/2 w-20 h-20 rounded-full border-4 border-black flex items-center justify-center" style={{ backgroundColor: '#D4A5A5', zIndex: 5 }}>
-                      <div className="w-14 h-14 rounded-full bg-white border-2 border-black"></div>
-                    </div>
-                    {/* Body/Dress - flowing queen dress */}
-                    <div className="absolute top-32 left-1/2 transform -translate-x-1/2 w-36 h-48 rounded-t-full border-4 border-black" style={{ backgroundColor: '#D4A5A5', zIndex: 3 }}>
-                      <div className="w-full h-full rounded-t-full bg-white border-2 border-black mt-2"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Label */}
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: 'Georgia, serif' }}>Participant</h2>
-              </div>
-            </div>
+        {/* Judge Card */}
+        <div 
+          className="bg-white rounded-lg p-8 relative flex flex-col items-center cursor-pointer transition hover:scale-105" 
+          style={{ border: '4px solid #000', minHeight: '400px' }}
+          onClick={() => handleRoleSelect('judge')}
+        >
+          {/* Corner Icons */}
+          <Heart className="absolute top-4 left-4 w-8 h-8" style={{ color: '#c89999', fill: '#c89999' }} />
+          <Heart className="absolute top-4 right-4 w-8 h-8" style={{ color: '#c89999', fill: '#c89999' }} />
+          <Heart className="absolute bottom-16 left-4 w-8 h-8" style={{ color: '#c89999', fill: '#c89999' }} />
+          <Heart className="absolute bottom-16 right-4 w-8 h-8" style={{ color: '#c89999', fill: '#c89999' }} />
+          
+          {/* Crown */}
+          <div className="mt-8 mb-6">
+            <Crown className="w-12 h-12" style={{ color: '#c89999' }} />
           </div>
 
-          {/* Judge Card - Queen of Hearts */}
-          <div 
-            className="relative cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-            onClick={() => handleRoleSelect('judge')}
-          >
-            <div className="bg-white rounded-lg shadow-2xl w-72 h-[500px] flex flex-col border-4 border-black relative overflow-hidden">
-              {/* Top Left Corner - Heart */}
-              <div className="absolute top-3 left-3 text-3xl font-bold" style={{ color: '#D4A5A5' }}>
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-              </div>
-              <div className="absolute top-2 left-2 text-xl font-bold" style={{ color: '#D4A5A5' }}>Q</div>
-              
-              {/* Top Right Corner - Heart */}
-              <div className="absolute top-3 right-3 text-3xl font-bold" style={{ color: '#D4A5A5' }}>
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-              </div>
-              
-              {/* Bottom Left Corner - Heart (upside down) */}
-              <div className="absolute bottom-3 left-3 text-3xl font-bold rotate-180" style={{ color: '#D4A5A5' }}>
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-              </div>
-              <div className="absolute bottom-2 left-2 text-xl font-bold rotate-180" style={{ color: '#D4A5A5' }}>Q</div>
-              
-              {/* Bottom Right Corner - Heart (upside down) */}
-              <div className="absolute bottom-3 right-3 text-3xl font-bold rotate-180" style={{ color: '#D4A5A5' }}>
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-              </div>
-              
-              {/* Queen Figure - Centered */}
-              <div className="flex-1 flex items-center justify-center mt-6 mb-6">
-                <div className="relative w-full h-full flex items-center justify-center">
-                  {/* Queen silhouette with crown */}
-                  <div className="text-center relative" style={{ width: '180px', height: '280px' }}>
-                    {/* Crown */}
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-10">
-                      <svg className="w-20 h-20" style={{ color: '#D4A5A5' }} fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 2c0 1.11-.89 2-2 2H7c-1.11 0-2-.89-2-2v-1h14v1z"/>
-                      </svg>
-                    </div>
-                    {/* Head/face circle */}
-                    <div className="absolute top-12 left-1/2 transform -translate-x-1/2 w-20 h-20 rounded-full border-4 border-black flex items-center justify-center" style={{ backgroundColor: '#D4A5A5', zIndex: 5 }}>
-                      <div className="w-14 h-14 rounded-full bg-white border-2 border-black"></div>
-                    </div>
-                    {/* Body/Dress - flowing queen dress */}
-                    <div className="absolute top-32 left-1/2 transform -translate-x-1/2 w-36 h-48 rounded-t-full border-4 border-black" style={{ backgroundColor: '#D4A5A5', zIndex: 3 }}>
-                      <div className="w-full h-full rounded-t-full bg-white border-2 border-black mt-2"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Label */}
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: 'Georgia, serif' }}>Judge</h2>
-              </div>
-            </div>
+          {/* Queen Icon */}
+          <div className="flex-1 flex items-center justify-center">
+            <QueenIcon />
           </div>
 
-          {/* Admin Card - Queen of Spades */}
-          <div 
-            className="relative cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-            onClick={() => handleRoleSelect('admin')}
-          >
-            <div className="bg-white rounded-lg shadow-2xl w-72 h-[500px] flex flex-col border-4 border-black relative overflow-hidden">
-              {/* Top Left Corner - Spade */}
-              <div className="absolute top-3 left-3 text-3xl font-bold" style={{ color: '#D4A5A5' }}>
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C8 2 5 5 5 9c0 4 3.5 7.5 7 10.5 3.5-3 7-6.5 7-10.5 0-4-3-7-7-7zm0 2c2.76 0 5 2.24 5 5 0 2.88-2.88 5.69-5 7.88C9.88 16.69 7 13.88 7 11c0-2.76 2.24-5 5-5z"/>
-                  <path d="M12 20v-3"/>
-                </svg>
-              </div>
-              <div className="absolute top-2 left-2 text-xl font-bold" style={{ color: '#D4A5A5' }}>Q</div>
-              
-              {/* Top Right Corner - Spade */}
-              <div className="absolute top-3 right-3 text-3xl font-bold" style={{ color: '#D4A5A5' }}>
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C8 2 5 5 5 9c0 4 3.5 7.5 7 10.5 3.5-3 7-6.5 7-10.5 0-4-3-7-7-7zm0 2c2.76 0 5 2.24 5 5 0 2.88-2.88 5.69-5 7.88C9.88 16.69 7 13.88 7 11c0-2.76 2.24-5 5-5z"/>
-                  <path d="M12 20v-3"/>
-                </svg>
-              </div>
-              
-              {/* Bottom Left Corner - Spade (upside down) */}
-              <div className="absolute bottom-3 left-3 text-3xl font-bold rotate-180" style={{ color: '#D4A5A5' }}>
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C8 2 5 5 5 9c0 4 3.5 7.5 7 10.5 3.5-3 7-6.5 7-10.5 0-4-3-7-7-7zm0 2c2.76 0 5 2.24 5 5 0 2.88-2.88 5.69-5 7.88C9.88 16.69 7 13.88 7 11c0-2.76 2.24-5 5-5z"/>
-                  <path d="M12 20v-3"/>
-                </svg>
-              </div>
-              <div className="absolute bottom-2 left-2 text-xl font-bold rotate-180" style={{ color: '#D4A5A5' }}>Q</div>
-              
-              {/* Bottom Right Corner - Spade (upside down) */}
-              <div className="absolute bottom-3 right-3 text-3xl font-bold rotate-180" style={{ color: '#D4A5A5' }}>
-                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C8 2 5 5 5 9c0 4 3.5 7.5 7 10.5 3.5-3 7-6.5 7-10.5 0-4-3-7-7-7zm0 2c2.76 0 5 2.24 5 5 0 2.88-2.88 5.69-5 7.88C9.88 16.69 7 13.88 7 11c0-2.76 2.24-5 5-5z"/>
-                  <path d="M12 20v-3"/>
-                </svg>
-              </div>
-              
-              {/* Queen Figure - Centered */}
-              <div className="flex-1 flex items-center justify-center mt-6 mb-6">
-                <div className="relative w-full h-full flex items-center justify-center">
-                  {/* Queen silhouette with crown */}
-                  <div className="text-center relative" style={{ width: '180px', height: '280px' }}>
-                    {/* Crown */}
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-10">
-                      <svg className="w-20 h-20" style={{ color: '#D4A5A5' }} fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 2c0 1.11-.89 2-2 2H7c-1.11 0-2-.89-2-2v-1h14v1z"/>
-                      </svg>
-                    </div>
-                    {/* Head/face circle */}
-                    <div className="absolute top-12 left-1/2 transform -translate-x-1/2 w-20 h-20 rounded-full border-4 border-black flex items-center justify-center" style={{ backgroundColor: '#D4A5A5', zIndex: 5 }}>
-                      <div className="w-14 h-14 rounded-full bg-white border-2 border-black"></div>
-                    </div>
-                    {/* Body/Dress - flowing queen dress */}
-                    <div className="absolute top-32 left-1/2 transform -translate-x-1/2 w-36 h-48 rounded-t-full border-4 border-black" style={{ backgroundColor: '#D4A5A5', zIndex: 3 }}>
-                      <div className="w-full h-full rounded-t-full bg-white border-2 border-black mt-2"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Label */}
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: 'Georgia, serif' }}>Admin</h2>
-              </div>
-            </div>
+          {/* Label */}
+          <h3 className="mt-4" style={{ fontFamily: 'Georgia, serif', color: '#333' }}>
+            Judge
+          </h3>
+        </div>
+
+        {/* Admin Card */}
+        <div 
+          className="bg-white rounded-lg p-8 relative flex flex-col items-center cursor-pointer transition hover:scale-105" 
+          style={{ border: '4px solid #000', minHeight: '400px' }}
+          onClick={() => handleRoleSelect('admin')}
+        >
+          {/* Corner Icons */}
+          <Lightbulb className="absolute top-4 left-4 w-8 h-8" style={{ color: '#c89999' }} />
+          <Lightbulb className="absolute top-4 right-4 w-8 h-8" style={{ color: '#c89999' }} />
+          <Lightbulb className="absolute bottom-16 left-4 w-8 h-8" style={{ color: '#c89999' }} />
+          <Lightbulb className="absolute bottom-16 right-4 w-8 h-8" style={{ color: '#c89999' }} />
+          
+          {/* Crown */}
+          <div className="mt-8 mb-6">
+            <Crown className="w-12 h-12" style={{ color: '#c89999' }} />
           </div>
+
+          {/* Queen Icon */}
+          <div className="flex-1 flex items-center justify-center">
+            <QueenIcon />
+          </div>
+
+          {/* Label */}
+          <h3 className="mt-4" style={{ fontFamily: 'Georgia, serif', color: '#333' }}>
+            Admin
+          </h3>
         </div>
       </div>
     </div>

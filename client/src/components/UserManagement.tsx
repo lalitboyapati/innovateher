@@ -52,7 +52,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
     if (!editingUser) return;
 
     try {
-      await adminAPI.updateUser(editingUser.id, userData);
+      const userId = editingUser.id ?? editingUser._id;
+      await adminAPI.updateUser(userId, userData);
       setEditingUser(null);
       await fetchUsers();
     } catch (err: any) {
@@ -198,11 +199,11 @@ export const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) =
                       >
                         Edit
                       </button>
-                      {user.id !== currentUser.id && (
+                      {(user.id ?? user._id) !== (currentUser.id ?? currentUser._id) && (
                         <button
                           onClick={() =>
                             handleDeleteUser(
-                              user.id,
+                              user.id ?? user._id,
                               user.fullName || `${user.firstName} ${user.lastName}`
                             )
                           }
@@ -397,4 +398,3 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
     </div>
   );
 };
-
