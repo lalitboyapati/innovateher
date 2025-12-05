@@ -8,7 +8,7 @@ const scoreSchema = new mongoose.Schema({
   },
   judgeId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Judge',
+    ref: 'User', // Judges are Users with role='judge'
     required: true,
   },
   // Rubric scores with weights (matching the new rubric structure)

@@ -37,6 +37,15 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
+    // Auto-generate initials for judges if not provided
+    let userInitials = undefined;
+    if (role === 'judge') {
+      // Generate initials from firstName and lastName
+      const firstInitial = firstName.charAt(0).toUpperCase();
+      const lastInitial = lastName.charAt(0).toUpperCase();
+      userInitials = (firstInitial + lastInitial).substring(0, 5);
+    }
+
     // Create user
     const user = new User({
       email,
@@ -45,6 +54,7 @@ router.post('/register', async (req, res) => {
       lastName,
       role,
       specialty: role === 'judge' ? specialty : undefined,
+      initials: userInitials,
     });
 
     await user.save();
@@ -63,6 +73,7 @@ router.post('/register', async (req, res) => {
         fullName: `${user.firstName} ${user.lastName}`,
         role: user.role,
         specialty: user.specialty,
+        initials: user.initials,
       },
     });
   } catch (error) {

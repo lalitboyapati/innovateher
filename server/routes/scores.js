@@ -1,21 +1,21 @@
 import express from 'express';
 import Score from '../models/Score.js';
 import Project from '../models/Project.js';
-import Judge from '../models/Judge.js';
+import User from '../models/User.js';
 import RubricConfig from '../models/RubricConfig.js';
-import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
+import { requireJudge, requireAnyAuth } from '../middleware/auth.js';
 import { analyzeSentiment } from '../utils/sentimentAnalysis.js';
 
 const router = express.Router();
 
 // Submit/Update score (Judge only)
-router.post('/', authenticateToken, authorizeRoles('judge'), async (req, res) => {
+router.post('/', requireJudge, async (req, res) => {
   try {
     const { projectId, rubricScores, feedback } = req.body;
-    const judgeId = req.user.judgeProfile;
+    const judgeId = req.user._id; // Judges are Users with role='judge'
 
     if (!judgeId) {
-      return res.status(400).json({ message: 'Judge profile not found' });
+      return res.status(400).json({ message: 'Judge information not found' });
     }
 
     // Verify judge is assigned to this project
@@ -24,30 +24,45 @@ router.post('/', authenticateToken, authorizeRoles('judge'), async (req, res) =>
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    if (!project.assignedJudges.includes(judgeId)) {
+    // Check if judge is assigned (assignedJudges contains judgeId)
+    const isAssigned = project.assignedJudges.some(id => id.toString() === judgeId.toString());
+    if (!isAssigned) {
       return res.status(403).json({ message: 'You are not assigned to this project' });
     }
 
     // Get rubric configuration for this project's track
-    const rubricConfig = await RubricConfig.getConfig();
-    const projectRubric = rubricConfig.getRubricForTrack(project.trackId);
+    let projectRubric;
+    try {
+      const rubricConfig = await RubricConfig.getConfig();
+      projectRubric = rubricConfig.getRubricForTrack(project.trackId);
+    } catch (rubricError) {
+      console.error('Error getting rubric config:', rubricError);
+      // Use default weights if rubric config fails
+      projectRubric = {
+        techStack: { weight: 0.2 },
+        design: { weight: 0.2 },
+        growthPotential: { weight: 0.2 },
+        presentation: { weight: 0.2 },
+        inspiration: { weight: 0.2 },
+      };
+    }
 
     // Apply rubric weights from config to scores
     const defaultRubricScores = {
-      techStack: { score: 0, weight: projectRubric.techStack.weight },
-      design: { score: 0, weight: projectRubric.design.weight },
-      growthPotential: { score: 0, weight: projectRubric.growthPotential.weight },
-      presentation: { score: 0, weight: projectRubric.presentation.weight },
-      inspiration: { score: 0, weight: projectRubric.inspiration.weight },
+      techStack: { score: 0, weight: projectRubric.techStack?.weight || 0.2 },
+      design: { score: 0, weight: projectRubric.design?.weight || 0.2 },
+      growthPotential: { score: 0, weight: projectRubric.growthPotential?.weight || 0.2 },
+      presentation: { score: 0, weight: projectRubric.presentation?.weight || 0.2 },
+      inspiration: { score: 0, weight: projectRubric.inspiration?.weight || 0.2 },
     };
 
     // Merge provided scores with defaults (preserving weights from config)
     const finalRubricScores = rubricScores ? {
-      techStack: { ...defaultRubricScores.techStack, ...rubricScores.techStack },
-      design: { ...defaultRubricScores.design, ...rubricScores.design },
-      growthPotential: { ...defaultRubricScores.growthPotential, ...rubricScores.growthPotential },
-      presentation: { ...defaultRubricScores.presentation, ...rubricScores.presentation },
-      inspiration: { ...defaultRubricScores.inspiration, ...rubricScores.inspiration },
+      techStack: { ...defaultRubricScores.techStack, ...(rubricScores.techStack || {}) },
+      design: { ...defaultRubricScores.design, ...(rubricScores.design || {}) },
+      growthPotential: { ...defaultRubricScores.growthPotential, ...(rubricScores.growthPotential || {}) },
+      presentation: { ...defaultRubricScores.presentation, ...(rubricScores.presentation || {}) },
+      inspiration: { ...defaultRubricScores.inspiration, ...(rubricScores.inspiration || {}) },
     } : defaultRubricScores;
 
     // Analyze sentiment from feedback
@@ -87,18 +102,30 @@ router.post('/', authenticateToken, authorizeRoles('judge'), async (req, res) =>
 });
 
 // Get scores for a project
-router.get('/project/:projectId', authenticateToken, async (req, res) => {
+router.get('/project/:projectId', requireAnyAuth, async (req, res) => {
   try {
     const scores = await Score.find({ projectId: req.params.projectId })
-      .populate('judgeId', 'name initials specialty');
+      .populate('judgeId', 'firstName lastName email specialty initials');
     res.json(scores);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Get scores by a judge
-router.get('/judge/:judgeId', authenticateToken, async (req, res) => {
+// Get scores by a judge (current judge's scores)
+router.get('/my-scores', requireJudge, async (req, res) => {
+  try {
+    const judgeId = req.user._id;
+    const scores = await Score.find({ judgeId })
+      .populate('projectId', 'name category description githubUrl');
+    res.json(scores);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get scores by a judge ID (for admin viewing)
+router.get('/judge/:judgeId', requireAnyAuth, async (req, res) => {
   try {
     const scores = await Score.find({ judgeId: req.params.judgeId })
       .populate('projectId', 'name category description');

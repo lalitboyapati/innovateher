@@ -28,10 +28,15 @@ export interface Project {
 }
 
 export interface User {
-  _id: string;
-  name: string;
+  _id?: string;
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
   email: string;
   role: 'admin' | 'judge' | 'participant';
+  specialty?: string;
+  initials?: string;
   judgeProfile?: string | Judge;
   projects?: string[] | Project[];
   trackId?: string | Track;

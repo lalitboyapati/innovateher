@@ -1,6 +1,6 @@
 import express from 'express';
 import RubricConfig from '../models/RubricConfig.js';
-import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
+import { requireAdmin, requireAnyAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -31,7 +31,7 @@ router.get('/track/:trackId', async (req, res) => {
 });
 
 // Update global rubric configuration (Admin only)
-router.put('/global', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+router.put('/global', requireAdmin, async (req, res) => {
   try {
     const { globalRubric, maxJudgesPerProject, minJudgesPerProject } = req.body;
     
@@ -58,7 +58,7 @@ router.put('/global', authenticateToken, authorizeRoles('admin'), async (req, re
 });
 
 // Update rubric for a specific track (Admin only)
-router.put('/track/:trackId', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+router.put('/track/:trackId', requireAdmin, async (req, res) => {
   try {
     const { rubric } = req.body;
     const config = await RubricConfig.getConfig();
@@ -91,7 +91,7 @@ router.put('/track/:trackId', authenticateToken, authorizeRoles('admin'), async 
 });
 
 // Remove track-specific override (revert to global) (Admin only)
-router.delete('/track/:trackId', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+router.delete('/track/:trackId', requireAdmin, async (req, res) => {
   try {
     const config = await RubricConfig.getConfig();
     
@@ -108,7 +108,7 @@ router.delete('/track/:trackId', authenticateToken, authorizeRoles('admin'), asy
 });
 
 // Validate rubric weights (ensure they sum to 1.0)
-router.post('/validate', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+router.post('/validate', requireAdmin, async (req, res) => {
   try {
     const { rubric } = req.body;
     

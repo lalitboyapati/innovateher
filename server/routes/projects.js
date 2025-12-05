@@ -11,14 +11,27 @@ const router = express.Router();
 // Get all projects with assigned judges (any authenticated user)
 router.get('/', requireAnyAuth, async (req, res) => {
   try {
-    const { hackathonId } = req.query;
-    const query = hackathonId ? { hackathonId } : {};
+    const { hackathonId, judgeId } = req.query;
+    const query = {};
+    if (hackathonId) query.hackathonId = hackathonId;
     
-    const projects = await Project.find(query)
+    // If judgeId is provided, only return projects assigned to that judge
+    let projects = await Project.find(query)
       .populate('assignedJudges', 'firstName lastName email specialty initials')
       .populate('createdBy', 'firstName lastName email')
       .populate('hackathonId', 'name')
       .sort({ createdAt: -1 });
+    
+    if (judgeId) {
+      projects = projects.filter(project => {
+        if (!project.assignedJudges || project.assignedJudges.length === 0) return false;
+        return project.assignedJudges.some(judge => {
+          const judgeIdStr = typeof judge === 'string' ? judge : judge._id?.toString();
+          return judgeIdStr === judgeId;
+        });
+      });
+    }
+    
     res.json(projects);
   } catch (error) {
     res.status(500).json({ message: error.message });

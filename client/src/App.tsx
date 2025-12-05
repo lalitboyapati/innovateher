@@ -14,6 +14,7 @@ import { LandingPage } from './components/LandingPage';
 import LoginPage from './components/LoginPage';
 import ParticipantDashboard from './components/ParticipantDashboard';
 import AdminDashboard from './components/AdminDashboard';
+import JudgeDashboard from './components/JudgeDashboard';
 import { ProjectCard } from './components/ProjectCard';
 import { UnassignedJudgesPanel } from './components/UnassignedJudgesPanel';
 import { QuickActionsPanel } from './components/QuickActionsPanel';
@@ -302,7 +303,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/judge" element={<Dashboard />} />
+        <Route path="/judge" element={<JudgeDashboard />} />
         <Route path="/participant" element={<ParticipantDashboard />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

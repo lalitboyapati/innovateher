@@ -46,12 +46,25 @@ export default function LoginPage() {
           return;
         }
 
+        if (!email.trim()) {
+          setError('Email is required.');
+          setLoading(false);
+          return;
+        }
+
+        if (!password.trim() || password.length < 6) {
+          setError('Password must be at least 6 characters long.');
+          setLoading(false);
+          return;
+        }
+
         await register(name, email, password, role, specialty || undefined);
         // Navigate to the role-specific dashboard after successful registration
         navigate(`/${role}`);
       }
     } catch (err: any) {
-      setError(err.message || (isLogin ? 'Login failed. Please try again.' : 'Registration failed. Please try again.'));
+      const errorMessage = err.response?.data?.message || err.message || (isLogin ? 'Login failed. Please try again.' : 'Registration failed. Please try again.');
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -133,9 +133,11 @@ export const authAPI = {
 
   register: async (name: string, email: string, password: string, role: string, specialty?: string) => {
     // Split name into firstName and lastName
-    const nameParts = name.trim().split(' ');
+    const nameParts = name.trim().split(/\s+/).filter(part => part.length > 0);
     const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
+    // If only one name part, use it as both firstName and lastName
+    // Otherwise, join all remaining parts as lastName
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : (firstName || '');
     
     const response = await api.post('/auth/register', {
       email,
@@ -153,6 +155,60 @@ export const authAPI = {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+    });
+    return response.data;
+  },
+};
+
+// Scores API
+export const scoresAPI = {
+  submitScore: async (projectId: string, rubricScores: any, feedback?: string) => {
+    const response = await api.post('/scores', {
+      projectId,
+      rubricScores,
+      feedback: feedback || '',
+    });
+    return response.data;
+  },
+
+  getProjectScores: async (projectId: string) => {
+    const response = await api.get(`/scores/project/${projectId}`);
+    return response.data;
+  },
+
+  getMyScores: async () => {
+    const response = await api.get('/scores/my-scores');
+    return response.data;
+  },
+
+  getJudgeScores: async (judgeId: string) => {
+    const response = await api.get(`/scores/judge/${judgeId}`);
+    return response.data;
+  },
+
+  getLeaderboard: async () => {
+    const response = await api.get('/scores/leaderboard');
+    return response.data;
+  },
+};
+
+// Rubric API
+export const rubricAPI = {
+  getRubric: async () => {
+    const response = await api.get('/rubric');
+    return response.data;
+  },
+
+  getTrackRubric: async (trackId: string) => {
+    const response = await api.get(`/rubric/track/${trackId}`);
+    return response.data;
+  },
+
+  updateGlobalRubric: async (globalRubric: any, maxJudgesPerProject?: number, minJudgesPerProject?: number) => {
+    const response = await api.put('/rubric/global', {
+      globalRubric,
+      maxJudgesPerProject,
+      minJudgesPerProject,
     });
     return response.data;
   },
