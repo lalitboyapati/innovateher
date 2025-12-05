@@ -1,38 +1,107 @@
-# InnovateHer - Hackathon Dashboard
+# InnovateHer - Hackathon Management Platform
 
-A full-stack MERN (MongoDB, Express, React, Node.js) application for managing hackathon projects and assigning judges to them. Features a modern drag-and-drop interface for intuitive judge assignment.
+A comprehensive full-stack MERN (MongoDB, Express, React, Node.js) application for managing hackathons, projects, judges, and scoring. Features role-based access control with dedicated portals for participants, judges, and administrators.
 
 ## 🚀 Features
 
-- 📋 View and manage projects with details (name, category, description)
-- 👥 Manage judges with specialties
-- 🎯 Drag and drop judges to assign them to projects
-- 👤 Click on judges to view their profiles
-- 📊 Real-time judge count updates
-- 🎨 Modern, responsive UI with Tailwind CSS
-- 💾 MongoDB database for persistent data storage
-- 🔄 RESTful API with Express.js
+### 🎯 Core Functionality
+- **Multi-Role System**: Separate portals for Participants, Judges, and Admins
+- **Project Submission**: Participants can submit projects with GitHub links and descriptions
+- **Judge Scoring**: Rubric-based scoring system with comments and feedback
+- **Auto-Assignment**: Intelligent automatic assignment of judges to projects based on specialty matching
+- **Admin Dashboard**: Comprehensive management interface for projects, users, and assignments
+- **User Management**: Create and manage users (admins, judges, participants) with role-based permissions
+- **Hackathon Management**: Support for multiple hackathons with default "InnovateHer" hackathon
+- **Real-time Updates**: Live updates across all dashboards
+
+### 👥 Role-Based Features
+
+#### Participant Portal
+- Submit projects with name, category, description, and GitHub URL
+- View submission confirmation
+- Access to participant dashboard
+
+#### Judge Portal
+- View assigned projects automatically
+- Score projects using dynamic rubric criteria
+- Submit scores and feedback comments
+- Auto-assignment of projects on login
+- View scoring history
+
+#### Admin Portal
+- **Projects Tab**: View all projects, manage judge assignments, auto-assign judges
+- **Judges Tab**: View all judges with specialties and initials
+- **Scores Tab**: View all project scores with judge details and averages
+- **Comments Tab**: View all judge feedback and comments per project
+- **Rubric Tab**: Configure and manage global scoring rubric
+- **User Management**: Create, edit, and delete users (admins, judges, participants)
+- Manual judge assignment override
+- Bulk auto-assignment for unassigned projects
+
+### 🎨 User Interface
+- Modern, responsive design with Tailwind CSS
+- Beautiful landing page with role selection cards
+- Intuitive navigation and role-based routing
+- Real-time feedback and loading states
+- Confetti celebrations on project submission
 
 ## 📁 Project Structure
 
 ```
 InnovateHer/
-├── client/                 # React frontend (Vite)
+├── client/                      # React frontend (Vite)
 │   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── services/      # API service layer
-│   │   ├── types/         # TypeScript types
-│   │   ├── App.tsx        # Main app component
-│   │   └── main.tsx       # Entry point
+│   │   ├── components/          # React components
+│   │   │   ├── AdminDashboard.tsx
+│   │   │   ├── JudgeDashboard.tsx
+│   │   │   ├── ParticipantDashboard.tsx
+│   │   │   ├── LandingPage.tsx
+│   │   │   ├── LoginPage.tsx
+│   │   │   └── ...
+│   │   ├── contexts/            # React contexts
+│   │   │   └── AuthContext.tsx
+│   │   ├── services/           # API service layer
+│   │   │   └── api.ts
+│   │   ├── types/              # TypeScript types
+│   │   │   └── index.ts
+│   │   ├── App.tsx             # Main app component with routing
+│   │   ├── main.tsx            # Entry point
+│   │   └── index.css           # Global styles
 │   ├── package.json
 │   └── vite.config.ts
-├── server/                # Express backend
-│   ├── models/           # MongoDB models
-│   ├── routes/           # API routes
-│   ├── scripts/          # Seed script
-│   ├── server.js         # Server entry point
+├── server/                     # Express backend
+│   ├── models/                 # MongoDB models
+│   │   ├── User.js
+│   │   ├── Project.js
+│   │   ├── Hackathon.js
+│   │   ├── Score.js
+│   │   ├── RubricConfig.js
+│   │   └── ...
+│   ├── routes/                  # API routes
+│   │   ├── auth.js
+│   │   ├── projects.js
+│   │   ├── judges.js
+│   │   ├── scores.js
+│   │   ├── rubric.js
+│   │   ├── assignments.js
+│   │   ├── admin.js
+│   │   └── ...
+│   ├── middleware/             # Express middleware
+│   │   └── auth.js
+│   ├── utils/                  # Utility functions
+│   │   ├── autoAssign.js
+│   │   ├── autoAssignJudges.js
+│   │   └── ...
+│   ├── scripts/                # Utility scripts
+│   │   ├── create-admin.js
+│   │   ├── clear-data.js
+│   │   ├── seed.js
+│   │   └── ...
+│   ├── server.js               # Server entry point
 │   └── package.json
-└── package.json          # Root package.json
+├── ADMIN_SETUP.md              # Admin setup guide
+├── SETUP.md                    # Detailed setup instructions
+└── README.md                   # This file
 ```
 
 ## 🛠️ Tech Stack
@@ -42,21 +111,24 @@ InnovateHer/
 - **TypeScript** - Type safety
 - **Vite** - Build tool and dev server
 - **Tailwind CSS** - Styling
-- **@dnd-kit** - Drag and drop functionality
+- **React Router DOM** - Client-side routing
+- **Lucide React** - Icon library
 - **Axios** - HTTP client
+- **Canvas Confetti** - Celebration animations
 
 ### Backend
 - **Node.js** - Runtime environment
 - **Express.js** - Web framework
 - **MongoDB** - Database
 - **Mongoose** - MongoDB object modeling
+- **JWT** - Authentication tokens
+- **bcryptjs** - Password hashing
 - **CORS** - Cross-origin resource sharing
 - **dotenv** - Environment variables
 
 ## 📦 Installation
 
 ### Prerequisites
-
 - Node.js (v18 or higher)
 - npm or yarn
 - MongoDB (local or MongoDB Atlas)
@@ -65,17 +137,19 @@ InnovateHer/
 
 1. **Clone the repository**
    ```bash
-   git clone <https://github.com/lalitboyapati/innovateher>
+   git clone https://github.com/lalitboyapati/innovateher.git
    cd InnovateHer
    ```
 
 2. **Install dependencies**
    ```bash
-   # Install root dependencies
+   # Install server dependencies
+   cd server
    npm install
-
-   # Install server and client dependencies
-   npm run install-all
+   
+   # Install client dependencies
+   cd ../client
+   npm install
    ```
 
 3. **Set up environment variables**
@@ -84,11 +158,13 @@ InnovateHer/
    ```env
    PORT=5000
    MONGODB_URI=mongodb://localhost:27017/innovateher
+   JWT_SECRET=your-secret-key-here
    ```
 
-   For MongoDB Atlas, use:
+   For MongoDB Atlas:
    ```env
    MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/innovateher
+   JWT_SECRET=your-secret-key-here
    ```
 
 4. **Start MongoDB**
@@ -105,53 +181,88 @@ InnovateHer/
    net start MongoDB
    ```
 
-5. **Seed the database (optional)**
+5. **Create the master admin account**
    ```bash
    cd server
-   npm run seed
+   npm run create-admin
    ```
+   
+   This creates an admin with:
+   - Email: `admin@innovateher.com`
+   - Password: `admin123`
+   
+   See [ADMIN_SETUP.md](./ADMIN_SETUP.md) for more details.
 
 6. **Run the application**
 
-   Start both server and client concurrently:
+   Start both server and client:
    ```bash
+   # Terminal 1 - Backend
+   cd server
+   npm run dev
+
+   # Terminal 2 - Frontend
+   cd client
    npm run dev
    ```
 
-   Or start them separately:
-   ```bash
-   # Terminal 1 - Backend
-   npm run server
-
-   # Terminal 2 - Frontend
-   npm run client
-   ```
-
 7. **Access the application**
-   - Frontend: http://localhost:3000
+   - Frontend: http://localhost:5173 (Vite default port)
    - Backend API: http://localhost:5000
 
 ## 🗄️ Database Schema
 
-### Project Model
+### User Model
 ```javascript
 {
-  name: String,
-  category: String,
-  description: String,
-  assignedJudges: [ObjectId], // References to Judge documents
+  email: String (unique, required),
+  password: String (hashed, required),
+  firstName: String,
+  lastName: String,
+  role: 'admin' | 'judge' | 'participant',
+  specialty: String (for judges),
+  initials: String (auto-generated for judges),
   createdAt: Date,
   updatedAt: Date
 }
 ```
 
-### Judge Model
+### Project Model
 ```javascript
 {
-  name: String,
-  initials: String,
-  specialty: String,
-  assignedToProjectId: ObjectId, // Reference to Project document
+  name: String (required),
+  category: String (required),
+  description: String (required),
+  githubUrl: String,
+  hackathonId: ObjectId (ref: Hackathon),
+  createdBy: ObjectId (ref: User),
+  assignedJudges: [ObjectId] (ref: User),
+  status: 'draft' | 'submitted' | 'under_review' | 'judged',
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Score Model
+```javascript
+{
+  projectId: ObjectId (ref: Project),
+  judgeId: ObjectId (ref: User),
+  rubricScores: Object (dynamic based on rubric),
+  totalScore: Number,
+  feedback: String,
+  sentimentScore: Number,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### RubricConfig Model
+```javascript
+{
+  criteria: Object (key-value pairs of criteria and weights),
+  maxJudgesPerProject: Number,
+  minJudgesPerProject: Number,
   createdAt: Date,
   updatedAt: Date
 }
@@ -159,49 +270,112 @@ InnovateHer/
 
 ## 🔌 API Endpoints
 
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
+- `GET /api/auth/me` - Get current user
+
 ### Projects
-- `GET /api/projects` - Get all projects
-- `GET /api/projects/:id` - Get a single project
-- `POST /api/projects` - Create a new project
-- `PUT /api/projects/:id` - Update a project
-- `DELETE /api/projects/:id` - Delete a project
-- `POST /api/projects/:id/judges/:judgeId` - Assign judge to project
-- `DELETE /api/projects/:id/judges/:judgeId` - Remove judge from project
+- `GET /api/projects` - Get all projects (supports `judgeId` query param)
+- `GET /api/projects/:id` - Get single project
+- `POST /api/projects` - Create new project
+- `PUT /api/projects/:id` - Update project
+- `DELETE /api/projects/:id` - Delete project
 
 ### Judges
 - `GET /api/judges` - Get all judges
 - `GET /api/judges/unassigned` - Get unassigned judges
-- `GET /api/judges/:id` - Get a single judge
-- `POST /api/judges` - Create a new judge
-- `PUT /api/judges/:id` - Update a judge
-- `DELETE /api/judges/:id` - Delete a judge
+- `GET /api/judges/:id` - Get single judge
 
-### Health Check
-- `GET /api/health` - Server health check
+### Scores
+- `POST /api/scores` - Submit score for project
+- `GET /api/scores/project/:projectId` - Get all scores for a project
+- `GET /api/scores/my-scores` - Get logged-in judge's scores
+- `GET /api/scores/judge/:judgeId` - Get scores by judge
+- `GET /api/scores/leaderboard` - Get leaderboard
 
-## 🎯 Usage
+### Rubric
+- `GET /api/rubric` - Get global rubric
+- `PUT /api/rubric/global` - Update global rubric (admin only)
+- `GET /api/rubric/track/:trackId` - Get track-specific rubric
 
-### Assigning Judges
+### Assignments
+- `POST /api/assignments/auto-assign` - Auto-assign judges to unassigned projects
+- `GET /api/assignments/stats` - Get assignment statistics
 
-1. Drag a judge from the "Unassigned Judges" panel
-2. Drop it onto a project card
-3. The judge will be automatically assigned to that project
-4. The UI will update in real-time
+### Admin
+- `GET /api/admin/users` - Get all users (admin only)
+- `POST /api/admin/admins` - Create admin (admin only)
+- `PUT /api/admin/users/:id` - Update user (admin only)
+- `DELETE /api/admin/users/:id` - Delete user (admin only)
 
-### Viewing Judge Profiles
+### Hackathons
+- `GET /api/hackathons` - Get all hackathons
+- `GET /api/hackathons/:id` - Get single hackathon
+- `POST /api/hackathons` - Create hackathon
+- `PUT /api/hackathons/:id` - Update hackathon
 
-- Click on any judge card to view their profile information
+## 🎯 Usage Guide
+
+### For Participants
+1. Navigate to the landing page
+2. Click on "Participant" card
+3. Register or login
+4. Submit your project with details and GitHub URL
+5. View confirmation screen
+
+### For Judges
+1. Navigate to the landing page
+2. Click on "Judge" card
+3. Register or login (judges can create their own accounts)
+4. View automatically assigned projects
+5. Score projects using the rubric
+6. Submit scores and feedback comments
+
+### For Admins
+1. Navigate to the landing page
+2. Click on "Admin" card
+3. Login with admin credentials
+4. Access admin dashboard with multiple tabs:
+   - **Projects**: View/manage projects and judge assignments
+   - **Judges**: View all judges
+   - **Scores**: View all project scores
+   - **Comments**: View all judge feedback
+   - **Rubric**: Configure scoring rubric
+   - **User Management**: Create/manage users
+
+## 🛠️ Utility Scripts
+
+### Create Admin Account
+```bash
+cd server
+npm run create-admin
+# Or with custom credentials:
+npm run create-admin <email> <password> <firstName> <lastName>
+```
+
+### Clear All Data (Preserves Admins)
+```bash
+cd server
+npm run clear-data
+```
+This removes all judges, participants, projects, and scores while keeping admin accounts.
+
+### Seed Database (Optional)
+```bash
+cd server
+npm run seed
+```
 
 ## 🚀 Deployment
 
 ### Backend Deployment
-
 1. Set environment variables on your hosting platform
 2. Ensure MongoDB is accessible (MongoDB Atlas recommended)
 3. Deploy to platforms like Heroku, Railway, or Render
+4. Update CORS settings to allow your frontend domain
 
 ### Frontend Deployment
-
 1. Build the frontend:
    ```bash
    cd client
@@ -213,15 +387,31 @@ InnovateHer/
    - Netlify
    - AWS S3 + CloudFront
 
-3. Update the API URL in production environment variables
+3. Update the API URL in production:
+   - Set `VITE_API_URL` environment variable to your backend URL
+   - Or update `api.ts` to use the production API URL
+
+## 🔒 Security Features
+- JWT-based authentication
+- Password hashing with bcryptjs
+- Role-based access control (RBAC)
+- Protected API routes with middleware
+- Secure token storage in localStorage
+- CORS configuration
+
+## 📚 Additional Documentation
+- [ADMIN_SETUP.md](./ADMIN_SETUP.md) - Detailed admin setup guide
+- [SETUP.md](./SETUP.md) - Comprehensive setup instructions
 
 ## 🤝 Contributing
-
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-## 📞 Support
 
-For issues and questions, please open an issue on the repository.
+## 📞 Support
+For issues and questions, please open an issue on the [GitHub repository](https://github.com/lalitboyapati/innovateher).
+
+## 📝 License
+This project is open source and available under the MIT License.
