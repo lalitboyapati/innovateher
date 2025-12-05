@@ -2,13 +2,17 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User } from '../types';
 import { authAPI } from '../services/api';
 
+export type UserRole = 'admin' | 'judge' | 'participant';
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, role: string, specialty?: string) => Promise<void>;
+  register: (name: string, email: string, password: string, role: UserRole, specialty?: string) => Promise<void>;
+  signup: (name: string, email: string, password: string, role: UserRole, specialty?: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  isLoading: boolean;
   isAuthenticated: boolean;
 }
 
@@ -56,7 +60,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const register = async (name: string, email: string, password: string, role: string, specialty?: string) => {
+  const register = async (
+    name: string,
+    email: string,
+    password: string,
+    role: UserRole,
+    specialty?: string
+  ) => {
     try {
       const response = await authAPI.register(name, email, password, role, specialty);
       const { token: authToken, user: userData } = response;
@@ -67,6 +77,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Registration failed');
     }
+  };
+
+  const signup = async (
+    name: string,
+    email: string,
+    password: string,
+    role: UserRole,
+    specialty?: string
+  ) => {
+    await register(name, email, password, role, specialty);
   };
 
   const logout = () => {
@@ -80,8 +100,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     token,
     login,
     register,
+    signup,
     logout,
     loading,
+    isLoading: loading,
     isAuthenticated: !!user && !!token,
   };
 
@@ -95,4 +117,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

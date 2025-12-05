@@ -31,7 +31,8 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, o
     setLoading(true);
 
     try {
-      await register(formData);
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      await register(fullName, formData.email, formData.password, 'participant');
       onClose();
       setFormData({
         email: '',

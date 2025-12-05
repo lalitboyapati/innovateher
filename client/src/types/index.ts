@@ -28,10 +28,16 @@ export interface Project {
 }
 
 export interface User {
+  id?: string;
   _id: string;
   name: string;
   email: string;
   role: 'admin' | 'judge' | 'participant';
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  specialty?: string;
+  initials?: string;
   judgeProfile?: string | Judge;
   projects?: string[] | Project[];
   trackId?: string | Track;
@@ -82,4 +88,3 @@ export interface LeaderboardEntry {
   averageScore: number;
   judgesCount: number;
 }
-
