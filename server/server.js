@@ -9,6 +9,7 @@ import hackathonRoutes from './routes/hackathons.js';
 import adminRoutes from './routes/admin.js';
 import scoresRoutes from './routes/scores.js';
 import rubricRoutes from './routes/rubric.js';
+import assignmentsRoutes from './routes/assignments.js';
 import { initializeDefaultHackathon } from './utils/initializeDefaultHackathon.js';
 
 dotenv.config();
@@ -29,6 +30,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/judges', judgeRoutes);
 app.use('/api/scores', scoresRoutes);
 app.use('/api/rubric', rubricRoutes);
+app.use('/api/assignments', assignmentsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { ClipboardList, Star, MessageSquare, Github, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { projectsAPI, scoresAPI } from '../services/api';
+import { projectsAPI, scoresAPI, assignmentsAPI, rubricAPI } from '../services/api';
 import { Project } from '../types';
 
-const RUBRIC_CRITERIA = [
-  { name: 'Innovation', weight: 30, maxScore: 10 },
-  { name: 'Technical Implementation', weight: 30, maxScore: 10 },
-  { name: 'Design & UX', weight: 20, maxScore: 10 },
-  { name: 'Social Impact', weight: 20, maxScore: 10 }
-];
+type RubricCriterion = {
+  name: string;
+  weight: number;
+  maxScore: number;
+  key: string;
+};
 
 type ProjectScores = {
   [projectId: string]: {
@@ -32,10 +32,12 @@ export default function JudgeDashboard() {
   const [currentComment, setCurrentComment] = useState('');
   const [selectedProjectForComment, setSelectedProjectForComment] = useState<string | null>(null);
   const [submittingScores, setSubmittingScores] = useState<Set<string>>(new Set());
+  const [rubricCriteria, setRubricCriteria] = useState<RubricCriterion[]>([]);
 
   useEffect(() => {
     // Wait for auth to finish loading before fetching projects
     if (!authLoading && user && (user._id || user.id)) {
+      fetchRubric();
       fetchAssignedProjects();
     } else if (!authLoading && !user) {
       // Auth finished loading but no user found
@@ -44,6 +46,80 @@ export default function JudgeDashboard() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user?._id, user?.id]);
+
+  const fetchRubric = async () => {
+    try {
+      const rubricConfig = await rubricAPI.getRubric();
+      const globalRubric = rubricConfig.globalRubric || {};
+      
+      // Map backend rubric structure to frontend format
+      const criteria: RubricCriterion[] = [];
+      
+      // Map backend rubric to frontend display - use the exact names from backend
+      if (globalRubric.inspiration) {
+        criteria.push({
+          name: globalRubric.inspiration.name || 'Inspiration',
+          weight: (globalRubric.inspiration.weight || 0.2) * 100,
+          maxScore: 10,
+          key: 'inspiration'
+        });
+      }
+      if (globalRubric.techStack) {
+        criteria.push({
+          name: globalRubric.techStack.name || 'Tech Stack',
+          weight: (globalRubric.techStack.weight || 0.2) * 100,
+          maxScore: 10,
+          key: 'techStack'
+        });
+      }
+      if (globalRubric.design) {
+        criteria.push({
+          name: globalRubric.design.name || 'Design',
+          weight: (globalRubric.design.weight || 0.2) * 100,
+          maxScore: 10,
+          key: 'design'
+        });
+      }
+      if (globalRubric.growthPotential) {
+        criteria.push({
+          name: globalRubric.growthPotential.name || 'Growth Potential',
+          weight: (globalRubric.growthPotential.weight || 0.2) * 100,
+          maxScore: 10,
+          key: 'growthPotential'
+        });
+      }
+      if (globalRubric.presentation) {
+        criteria.push({
+          name: globalRubric.presentation.name || 'Presentation',
+          weight: (globalRubric.presentation.weight || 0.2) * 100,
+          maxScore: 10,
+          key: 'presentation'
+        });
+      }
+      
+      // If no criteria found, use defaults matching backend structure
+      if (criteria.length === 0) {
+        criteria.push(
+          { name: 'Inspiration', weight: 20, maxScore: 10, key: 'inspiration' },
+          { name: 'Tech Stack', weight: 20, maxScore: 10, key: 'techStack' },
+          { name: 'Design', weight: 20, maxScore: 10, key: 'design' },
+          { name: 'Growth Potential', weight: 20, maxScore: 10, key: 'growthPotential' },
+          { name: 'Presentation', weight: 20, maxScore: 10, key: 'presentation' }
+        );
+      }
+      
+      setRubricCriteria(criteria);
+    } catch (err) {
+      console.error('Error fetching rubric:', err);
+      // Use defaults if fetch fails
+      setRubricCriteria([
+        { name: 'Innovation', weight: 30, maxScore: 10, key: 'inspiration' },
+        { name: 'Technical Implementation', weight: 30, maxScore: 10, key: 'techStack' },
+        { name: 'Design & UX', weight: 20, maxScore: 10, key: 'design' },
+        { name: 'Social Impact', weight: 20, maxScore: 10, key: 'growthPotential' }
+      ]);
+    }
+  };
 
   const fetchAssignedProjects = async () => {
     try {
@@ -70,6 +146,14 @@ export default function JudgeDashboard() {
         return;
       }
 
+      // Auto-assign judges to any unassigned projects when judge logs in
+      try {
+        await assignmentsAPI.autoAssign();
+      } catch (assignError) {
+        console.error('Error auto-assigning projects:', assignError);
+        // Continue even if auto-assignment fails
+      }
+
       // Get projects assigned to this judge
       const allProjects = await projectsAPI.getAll();
       const assigned = allProjects.filter(project => {
@@ -90,14 +174,14 @@ export default function JudgeDashboard() {
         
         myScores.forEach((score: any) => {
           const projectId = typeof score.projectId === 'string' ? score.projectId : score.projectId._id;
-          if (score.rubricScores) {
-            // Map backend rubric scores to frontend format
-            scoresMap[projectId] = {
-              'Innovation': score.rubricScores.inspiration?.score || 0,
-              'Technical Implementation': score.rubricScores.techStack?.score || 0,
-              'Design & UX': score.rubricScores.design?.score || 0,
-              'Social Impact': score.rubricScores.growthPotential?.score || 0,
-            };
+          if (score.rubricScores && rubricCriteria.length > 0) {
+            // Map backend rubric scores to frontend format using rubric criteria
+            const mappedScores: Record<string, number> = {};
+            rubricCriteria.forEach(criterion => {
+              const backendScore = score.rubricScores[criterion.key];
+              mappedScores[criterion.name] = backendScore?.score || 0;
+            });
+            scoresMap[projectId] = mappedScores;
           }
           if (score.feedback) {
             commentsMap[projectId] = score.feedback;
@@ -140,14 +224,17 @@ export default function JudgeDashboard() {
       }
 
       // Convert scores to the format expected by the backend
-      // Map frontend criteria to backend rubric structure
-      const rubricScores: Record<string, { score: number }> = {
-        inspiration: { score: projectScores['Innovation'] || 0 },
-        techStack: { score: projectScores['Technical Implementation'] || 0 },
-        design: { score: projectScores['Design & UX'] || 0 },
-        growthPotential: { score: projectScores['Social Impact'] || 0 },
-        presentation: { score: 0 }, // Default if not in criteria
-      };
+      // Map frontend criteria to backend rubric structure using the key
+      const rubricScores: Record<string, { score: number }> = {};
+      rubricCriteria.forEach(criterion => {
+        const score = projectScores[criterion.name] || 0;
+        rubricScores[criterion.key] = { score };
+      });
+      
+      // Ensure all required backend fields are present
+      if (!rubricScores.presentation) {
+        rubricScores.presentation = { score: 0 };
+      }
 
       await scoresAPI.submitScore(projectId, rubricScores, comments[projectId] || '');
       
@@ -170,13 +257,16 @@ export default function JudgeDashboard() {
       try {
         // Submit comment as feedback with scores (or update existing score)
         const projectScores = scores[projectId] || {};
-        const rubricScores: Record<string, { score: number }> = {
-          inspiration: { score: projectScores['Innovation'] || 0 },
-          techStack: { score: projectScores['Technical Implementation'] || 0 },
-          design: { score: projectScores['Design & UX'] || 0 },
-          growthPotential: { score: projectScores['Social Impact'] || 0 },
-          presentation: { score: 0 },
-        };
+        const rubricScores: Record<string, { score: number }> = {};
+        rubricCriteria.forEach(criterion => {
+          const score = projectScores[criterion.name] || 0;
+          rubricScores[criterion.key] = { score };
+        });
+        
+        // Ensure all required backend fields are present
+        if (!rubricScores.presentation) {
+          rubricScores.presentation = { score: 0 };
+        }
         
         await scoresAPI.submitScore(projectId, rubricScores, currentComment);
         
@@ -195,9 +285,9 @@ export default function JudgeDashboard() {
 
   const calculateProjectScore = (projectId: string) => {
     const projectScores = scores[projectId];
-    if (!projectScores) return '0.00';
+    if (!projectScores || rubricCriteria.length === 0) return '0.00';
 
-    const totalScore = RUBRIC_CRITERIA.reduce((sum, criterion) => {
+    const totalScore = rubricCriteria.reduce((sum, criterion) => {
       const score = projectScores[criterion.name] || 0;
       return sum + (score * (criterion.weight / 100));
     }, 0);
@@ -207,8 +297,8 @@ export default function JudgeDashboard() {
 
   const isProjectScored = (projectId: string) => {
     const projectScores = scores[projectId];
-    if (!projectScores) return false;
-    return RUBRIC_CRITERIA.every(criterion => (projectScores[criterion.name] || 0) > 0);
+    if (!projectScores || rubricCriteria.length === 0) return false;
+    return rubricCriteria.every(criterion => (projectScores[criterion.name] || 0) > 0);
   };
 
   const getInitials = (name: string) => {
@@ -428,7 +518,7 @@ export default function JudgeDashboard() {
                 Scoring Rubric
               </h3>
               <div className="grid md:grid-cols-2 gap-4">
-                {RUBRIC_CRITERIA.map((criterion, idx) => (
+                {rubricCriteria.map((criterion, idx) => (
                   <div 
                     key={idx}
                     className="p-4 rounded-md"
@@ -475,7 +565,7 @@ export default function JudgeDashboard() {
                     </div>
                   </div>
                   <div className="space-y-4">
-                    {RUBRIC_CRITERIA.map(criterion => (
+                    {rubricCriteria.map(criterion => (
                       <div key={criterion.name}>
                         <label className="block mb-3" style={{ fontFamily: 'Georgia, serif', color: '#333', fontWeight: '600' }}>
                           {criterion.name} <span style={{ color: '#666', fontWeight: 'normal' }}>({criterion.weight}%)</span>

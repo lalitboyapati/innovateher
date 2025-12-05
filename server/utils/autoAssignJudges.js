@@ -129,6 +129,65 @@ export async function autoAssignJudgesToProject(projectId) {
 }
 
 /**
+ * Auto-assign judges to all unassigned projects
+ */
+export async function autoAssignUnassignedProjects() {
+  try {
+    // Get all projects without assigned judges
+    const unassignedProjects = await Project.find({
+      $or: [
+        { assignedJudges: { $size: 0 } },
+        { assignedJudges: { $exists: false } }
+      ]
+    });
+
+    if (unassignedProjects.length === 0) {
+      return {
+        success: true,
+        message: 'All projects already have judges assigned',
+        assigned: [],
+      };
+    }
+
+    const results = {
+      assigned: [],
+      failed: [],
+    };
+
+    // Auto-assign judges to each unassigned project
+    for (const project of unassignedProjects) {
+      try {
+        const assignmentResult = await autoAssignJudgesToProject(project._id);
+        if (assignmentResult.success) {
+          results.assigned.push({
+            projectId: project._id,
+            projectName: project.name,
+            assignedJudges: assignmentResult.assignedJudges,
+          });
+        } else {
+          results.failed.push({
+            projectId: project._id,
+            projectName: project.name,
+            reason: assignmentResult.message || 'Assignment failed',
+          });
+        }
+      } catch (error) {
+        results.failed.push({
+          projectId: project._id,
+          projectName: project.name,
+          reason: error.message,
+        });
+      }
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Error auto-assigning unassigned projects:', error);
+    throw error;
+  }
+}
+
+/**
  * Rebalance all judge assignments to ensure even distribution
  */
 export async function rebalanceAllJudgeAssignments() {

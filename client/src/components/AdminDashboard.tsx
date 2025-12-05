@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Users, ClipboardList, Award, BarChart3, Plus, X, Github } from 'lucide-react';
+import { Users, ClipboardList, Award, BarChart3, Plus, X, Github, Edit2, Check, MessageSquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { projectsAPI, judgesAPI } from '../services/api';
+import { projectsAPI, judgesAPI, assignmentsAPI, scoresAPI, rubricAPI } from '../services/api';
 import { Project, User } from '../types';
 
 type RubricCriterion = {
@@ -10,32 +10,115 @@ type RubricCriterion = {
   maxScore: number;
 };
 
-type Score = {
-  projectId: string;
-  judgeName: string;
-  scores: Record<string, number>;
+
+type ProjectScore = {
+  _id: string;
+  projectId: string | Project;
+  judgeId: string | User;
+  rubricScores: {
+    techStack?: { score: number; weight: number };
+    design?: { score: number; weight: number };
+    growthPotential?: { score: number; weight: number };
+    presentation?: { score: number; weight: number };
+    inspiration?: { score: number; weight: number };
+  };
+  totalScore: number;
+  feedback?: string;
+  sentimentScore?: number | null;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'projects' | 'judges' | 'rubric' | 'scores'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'judges' | 'rubric' | 'scores' | 'comments'>('projects');
   const [projects, setProjects] = useState<Project[]>([]);
   const [judges, setJudges] = useState<User[]>([]);
-  const [scores, setScores] = useState<Score[]>([]);
+  const [projectScores, setProjectScores] = useState<Record<string, ProjectScore[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingProject, setEditingProject] = useState<string | null>(null);
+  const [selectedJudges, setSelectedJudges] = useState<Set<string>>(new Set());
+  const [savingAssignment, setSavingAssignment] = useState(false);
   
-  const [rubricCriteria, setRubricCriteria] = useState<RubricCriterion[]>([
-    { name: 'Innovation', weight: 30, maxScore: 10 },
-    { name: 'Technical Implementation', weight: 30, maxScore: 10 },
-    { name: 'Design & UX', weight: 20, maxScore: 10 },
-    { name: 'Social Impact', weight: 20, maxScore: 10 }
-  ]);
+  const [rubricCriteria, setRubricCriteria] = useState<RubricCriterion[]>([]);
+  const [rubricConfig, setRubricConfig] = useState<any>(null);
   const [newCriterion, setNewCriterion] = useState({ name: '', weight: 0, maxScore: 10 });
 
   useEffect(() => {
     fetchData();
+    fetchRubric();
   }, []);
+
+  const fetchRubric = async () => {
+    try {
+      const config = await rubricAPI.getRubric();
+      setRubricConfig(config);
+      const globalRubric = config.globalRubric || {};
+      
+      // Map backend rubric structure to frontend format
+      const criteria: RubricCriterion[] = [];
+      
+      if (globalRubric.inspiration) {
+        criteria.push({
+          name: globalRubric.inspiration.name || 'Inspiration',
+          weight: (globalRubric.inspiration.weight || 0.2) * 100,
+          maxScore: 10
+        });
+      }
+      if (globalRubric.techStack) {
+        criteria.push({
+          name: globalRubric.techStack.name || 'Tech Stack',
+          weight: (globalRubric.techStack.weight || 0.2) * 100,
+          maxScore: 10
+        });
+      }
+      if (globalRubric.design) {
+        criteria.push({
+          name: globalRubric.design.name || 'Design',
+          weight: (globalRubric.design.weight || 0.2) * 100,
+          maxScore: 10
+        });
+      }
+      if (globalRubric.growthPotential) {
+        criteria.push({
+          name: globalRubric.growthPotential.name || 'Growth Potential',
+          weight: (globalRubric.growthPotential.weight || 0.2) * 100,
+          maxScore: 10
+        });
+      }
+      if (globalRubric.presentation) {
+        criteria.push({
+          name: globalRubric.presentation.name || 'Presentation',
+          weight: (globalRubric.presentation.weight || 0.2) * 100,
+          maxScore: 10
+        });
+      }
+      
+      // If no criteria found, use defaults
+      if (criteria.length === 0) {
+        criteria.push(
+          { name: 'Inspiration', weight: 20, maxScore: 10 },
+          { name: 'Tech Stack', weight: 20, maxScore: 10 },
+          { name: 'Design', weight: 20, maxScore: 10 },
+          { name: 'Growth Potential', weight: 20, maxScore: 10 },
+          { name: 'Presentation', weight: 20, maxScore: 10 }
+        );
+      }
+      
+      setRubricCriteria(criteria);
+    } catch (err) {
+      console.error('Error fetching rubric:', err);
+      // Use defaults if fetch fails
+      setRubricCriteria([
+        { name: 'Inspiration', weight: 20, maxScore: 10 },
+        { name: 'Tech Stack', weight: 20, maxScore: 10 },
+        { name: 'Design', weight: 20, maxScore: 10 },
+        { name: 'Growth Potential', weight: 20, maxScore: 10 },
+        { name: 'Presentation', weight: 20, maxScore: 10 }
+      ]);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -46,10 +129,21 @@ export default function AdminDashboard() {
         judgesAPI.getAll(),
       ]);
       setProjects(projectsData);
-      setJudges(judgesData);
+      setJudges(judgesData as User[]);
       
       // Fetch scores for all projects
-      // TODO: Implement scores API endpoint
+      const scoresMap: Record<string, ProjectScore[]> = {};
+      for (const project of projectsData) {
+        try {
+          const scores = await scoresAPI.getProjectScores(project._id);
+          if (scores && scores.length > 0) {
+            scoresMap[project._id] = scores;
+          }
+        } catch (scoreErr) {
+          console.error(`Error fetching scores for project ${project._id}:`, scoreErr);
+        }
+      }
+      setProjectScores(scoresMap);
       
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load data. Please try again.');
@@ -88,13 +182,16 @@ export default function AdminDashboard() {
     projects.forEach(project => {
       if (project.assignedJudges) {
         project.assignedJudges.forEach(judge => {
-          const judgeId = typeof judge === 'string' ? judge : (judge as any)._id;
+          const judgeId = typeof judge === 'string' ? judge : (judge as any)._id || (judge as any).id;
           if (judgeId) assignedJudgeIds.add(judgeId);
         });
       }
     });
     
-    return judges.filter(judge => !assignedJudgeIds.has(judge._id));
+    return judges.filter(judge => {
+      const judgeId = judge._id || judge.id;
+      return judgeId ? !assignedJudgeIds.has(judgeId) : false;
+    });
   };
 
   const handleAddCriterion = () => {
@@ -108,23 +205,79 @@ export default function AdminDashboard() {
     setRubricCriteria(rubricCriteria.filter((_, i) => i !== index));
   };
 
-  const totalWeight = rubricCriteria.reduce((sum, c) => sum + c.weight, 0);
-
-  const calculateProjectScore = (projectId: string) => {
-    const projectScores = scores.filter(s => s.projectId === projectId);
-    if (projectScores.length === 0) return '0.00';
-
-    const avgScores = rubricCriteria.map(criterion => {
-      const criterionKey = criterion.name.toLowerCase().split(' ')[0];
-      const sum = projectScores.reduce((acc, s) => {
-        const score = s.scores[criterionKey] || 0;
-        return acc + score;
-      }, 0);
-      return (sum / projectScores.length) * (criterion.weight / 100);
-    });
-
-    return avgScores.reduce((sum, score) => sum + score, 0).toFixed(2);
+  const handleSaveRubric = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Convert frontend rubric criteria to backend format
+      // The backend expects: inspiration, techStack, design, growthPotential, presentation
+      const globalRubric: any = {
+        inspiration: { name: 'Inspiration', weight: 0.2, enabled: true },
+        techStack: { name: 'Tech Stack', weight: 0.2, enabled: true },
+        design: { name: 'Design', weight: 0.2, enabled: true },
+        growthPotential: { name: 'Growth Potential', weight: 0.2, enabled: true },
+        presentation: { name: 'Presentation', weight: 0.2, enabled: true },
+      };
+      
+      // Map frontend criteria to backend keys based on name matching
+      rubricCriteria.forEach(criterion => {
+        const nameLower = criterion.name.toLowerCase();
+        const weight = criterion.weight / 100; // Convert percentage to decimal
+        
+        if (nameLower.includes('inspiration') || nameLower.includes('innovation')) {
+          globalRubric.inspiration = {
+            name: criterion.name,
+            weight: weight,
+            enabled: true
+          };
+        } else if (nameLower.includes('tech') || nameLower.includes('technical')) {
+          globalRubric.techStack = {
+            name: criterion.name,
+            weight: weight,
+            enabled: true
+          };
+        } else if (nameLower.includes('design')) {
+          globalRubric.design = {
+            name: criterion.name,
+            weight: weight,
+            enabled: true
+          };
+        } else if (nameLower.includes('growth') || nameLower.includes('social') || nameLower.includes('impact')) {
+          globalRubric.growthPotential = {
+            name: criterion.name,
+            weight: weight,
+            enabled: true
+          };
+        } else if (nameLower.includes('presentation')) {
+          globalRubric.presentation = {
+            name: criterion.name,
+            weight: weight,
+            enabled: true
+          };
+        }
+      });
+      
+      // Normalize weights to sum to 1.0
+      const totalWeight = Object.values(globalRubric).reduce((sum: number, r: any) => sum + (r.weight || 0), 0);
+      if (totalWeight > 0) {
+        Object.keys(globalRubric).forEach(key => {
+          globalRubric[key].weight = globalRubric[key].weight / totalWeight;
+        });
+      }
+      
+      await rubricAPI.updateGlobalRubric(globalRubric);
+      await fetchRubric(); // Refresh to show updated rubric
+      setError('');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to save rubric. Please try again.');
+      console.error('Error saving rubric:', err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const totalWeight = rubricCriteria.reduce((sum, c) => sum + c.weight, 0);
 
   if (loading) {
     return (
@@ -240,6 +393,20 @@ export default function AdminDashboard() {
             <BarChart3 className="inline w-5 h-5 mr-2" />
             Scores
           </button>
+          <button
+            onClick={() => setActiveTab('comments')}
+            className="px-6 py-3 rounded-md transition hover:opacity-90"
+            style={{
+              backgroundColor: activeTab === 'comments' ? '#c89999' : 'white',
+              color: activeTab === 'comments' ? 'white' : '#333',
+              border: '2px solid #000',
+              fontFamily: 'Georgia, serif',
+              fontWeight: '600'
+            }}
+          >
+            <MessageSquare className="inline w-5 h-5 mr-2" />
+            Comments
+          </button>
         </div>
 
         {/* Projects Tab */}
@@ -297,38 +464,198 @@ export default function AdminDashboard() {
                     )}
 
                     <div>
-                      <p className="mb-3" style={{ fontFamily: 'Georgia, serif', color: '#666', fontWeight: '600' }}>
-                        Assigned Judges
-                      </p>
-                      {assignedJudges.length > 0 ? (
-                        <div className="flex flex-wrap gap-3">
-                          {assignedJudges.map((judge, idx) => {
-                            const judgeName = getJudgeName(judge);
-                            return (
-                              <div key={idx} className="flex items-center gap-2">
-                                <div
-                                  className="w-10 h-10 rounded-full flex items-center justify-center text-white"
-                                  style={{ backgroundColor: '#c89999', fontFamily: 'Georgia, serif', fontWeight: '600' }}
+                      <div className="flex justify-between items-center mb-3">
+                        <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontWeight: '600' }}>
+                          Assigned Judges
+                        </p>
+                        {editingProject !== project._id ? (
+                          <button
+                            onClick={() => {
+                              setEditingProject(project._id);
+                              const currentJudgeIds = new Set(
+                                assignedJudges.map(j => {
+                                  const judgeId = typeof j === 'string' ? j : (j as any)._id;
+                                  return judgeId;
+                                })
+                              );
+                              setSelectedJudges(currentJudgeIds);
+                            }}
+                            className="flex items-center gap-1 px-3 py-1 rounded-md transition hover:opacity-90"
+                            style={{
+                              backgroundColor: '#c89999',
+                              color: 'white',
+                              border: '2px solid #000',
+                              fontFamily: 'Georgia, serif',
+                              fontSize: '0.875rem',
+                              fontWeight: '600'
+                            }}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                            Edit Judges
+                          </button>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  setSavingAssignment(true);
+                                  const judgeIds = Array.from(selectedJudges);
+                                  await projectsAPI.update(project._id, { assignedJudges: judgeIds as unknown as any });
+                                  await fetchData();
+                                  setEditingProject(null);
+                                  setSelectedJudges(new Set());
+                                } catch (err: any) {
+                                  setError(err.response?.data?.message || 'Failed to update judge assignments');
+                                } finally {
+                                  setSavingAssignment(false);
+                                }
+                              }}
+                              disabled={savingAssignment}
+                              className="flex items-center gap-1 px-3 py-1 rounded-md transition hover:opacity-90 disabled:opacity-50"
+                              style={{
+                                backgroundColor: '#10b981',
+                                color: 'white',
+                                border: '2px solid #000',
+                                fontFamily: 'Georgia, serif',
+                                fontSize: '0.875rem',
+                                fontWeight: '600'
+                              }}
+                            >
+                              <Check className="w-4 h-4" />
+                              {savingAssignment ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingProject(null);
+                                setSelectedJudges(new Set());
+                              }}
+                              className="px-3 py-1 rounded-md transition hover:opacity-90"
+                              style={{
+                                backgroundColor: 'white',
+                                color: '#333',
+                                border: '2px solid #000',
+                                fontFamily: 'Georgia, serif',
+                                fontSize: '0.875rem',
+                                fontWeight: '600'
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {editingProject === project._id ? (
+                        <div className="space-y-2">
+                          <p className="text-sm mb-2" style={{ fontFamily: 'Georgia, serif', color: '#666' }}>
+                            Select judges to assign to this project:
+                          </p>
+                          <div className="max-h-48 overflow-y-auto space-y-2 p-2 rounded-md" style={{ backgroundColor: '#f9f9f9', border: '2px solid #e5e5e5' }}>
+                            {judges.map(judge => {
+                              const judgeId = judge._id || judge.id;
+                              if (!judgeId) return null;
+                              const isSelected = selectedJudges.has(judgeId);
+                              const judgeName = `${judge.firstName || ''} ${judge.lastName || ''}`.trim() || judge.email;
+                              return (
+                                <label
+                                  key={judgeId}
+                                  className="flex items-center gap-3 p-2 rounded-md cursor-pointer transition hover:bg-white"
+                                  style={{ border: isSelected ? '2px solid #c89999' : '2px solid #e5e5e5' }}
                                 >
-                                  {getInitials(judgeName)}
-                                </div>
-                                <span style={{ fontFamily: 'Georgia, serif', color: '#333' }}>
-                                  {judgeName}
-                                </span>
-                              </div>
-                            );
-                          })}
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => {
+                                      const newSelected = new Set(selectedJudges);
+                                      if (e.target.checked) {
+                                        newSelected.add(judgeId);
+                                      } else {
+                                        newSelected.delete(judgeId);
+                                      }
+                                      setSelectedJudges(newSelected);
+                                    }}
+                                    className="w-5 h-5"
+                                    style={{ accentColor: '#c89999' }}
+                                  />
+                                  <div
+                                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm"
+                                    style={{ backgroundColor: '#c89999', fontFamily: 'Georgia, serif', fontWeight: '600' }}
+                                  >
+                                    {getInitials(judgeName)}
+                                  </div>
+                                  <div>
+                                    <span style={{ fontFamily: 'Georgia, serif', color: '#333', fontWeight: '600' }}>
+                                      {judgeName}
+                                    </span>
+                                    {judge.specialty && (
+                                      <p className="text-xs" style={{ fontFamily: 'Georgia, serif', color: '#666' }}>
+                                        {judge.specialty}
+                                      </p>
+                                    )}
+                                  </div>
+                                </label>
+                              );
+                            })}
+                          </div>
                         </div>
                       ) : (
-                        <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontStyle: 'italic' }}>
-                          No judges assigned yet
-                        </p>
+                        assignedJudges.length > 0 ? (
+                          <div className="flex flex-wrap gap-3">
+                            {assignedJudges.map((judge, idx) => {
+                              const judgeName = getJudgeName(judge);
+                              return (
+                                <div key={idx} className="flex items-center gap-2">
+                                  <div
+                                    className="w-10 h-10 rounded-full flex items-center justify-center text-white"
+                                    style={{ backgroundColor: '#c89999', fontFamily: 'Georgia, serif', fontWeight: '600' }}
+                                  >
+                                    {getInitials(judgeName)}
+                                  </div>
+                                  <span style={{ fontFamily: 'Georgia, serif', color: '#333' }}>
+                                    {judgeName}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontStyle: 'italic' }}>
+                            No judges assigned yet
+                          </p>
+                        )
                       )}
                     </div>
                   </div>
                 );
               })
             )}
+            {/* Auto-assign button */}
+            <div className="mt-4">
+              <button
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    await assignmentsAPI.autoAssign();
+                    await fetchData();
+                    setError('');
+                  } catch (err: any) {
+                    setError(err.response?.data?.message || 'Failed to auto-assign judges');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                className="w-full py-3 rounded-md transition hover:opacity-90 disabled:opacity-50"
+                style={{
+                  backgroundColor: '#c89999',
+                  color: 'white',
+                  border: '2px solid #000',
+                  fontFamily: 'Georgia, serif',
+                  fontWeight: '600'
+                }}
+              >
+                Auto-Assign Judges to Unassigned Projects
+              </button>
+            </div>
           </div>
         )}
 
@@ -419,9 +746,29 @@ export default function AdminDashboard() {
         {/* Rubric Tab */}
         {activeTab === 'rubric' && (
           <div className="bg-white rounded-lg p-8 relative" style={{ border: '3px solid #000' }}>
-            <h3 className="mb-6" style={{ fontFamily: 'Georgia, serif', color: '#333' }}>
-              Scoring Rubric
-            </h3>
+            <div className="flex justify-between items-center mb-6">
+              <h3 style={{ fontFamily: 'Georgia, serif', color: '#333' }}>
+                Scoring Rubric
+              </h3>
+              <button
+                onClick={handleSaveRubric}
+                disabled={loading || totalWeight !== 100}
+                className="px-6 py-2 rounded-md transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: totalWeight === 100 ? '#10b981' : '#999',
+                  color: 'white',
+                  border: '2px solid #000',
+                  fontFamily: 'Georgia, serif',
+                  fontWeight: '600'
+                }}
+              >
+                Save Rubric
+              </button>
+            </div>
+            
+            <p className="mb-4 text-sm" style={{ fontFamily: 'Georgia, serif', color: '#666', fontStyle: 'italic' }}>
+              This is the rubric that judges use when scoring projects. Changes will apply to all future scoring.
+            </p>
 
             {/* Current Criteria */}
             <div className="space-y-4 mb-6">
@@ -539,8 +886,10 @@ export default function AdminDashboard() {
               </div>
             ) : (
               projects.map(project => {
-                const projectScores = scores.filter(s => s.projectId === project._id);
-                const finalScore = calculateProjectScore(project._id);
+                const scores = projectScores[project._id] || [];
+                const averageScore = scores.length > 0 
+                  ? (scores.reduce((sum, s) => sum + (s.totalScore || 0), 0) / scores.length).toFixed(2)
+                  : 'N/A';
 
                 return (
                   <div key={project._id} className="bg-white rounded-lg p-6 relative" style={{ border: '3px solid #000' }}>
@@ -558,43 +907,189 @@ export default function AdminDashboard() {
                       </div>
                       <div className="text-right">
                         <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontSize: '0.875rem' }}>
-                          Final Score
+                          Average Score
                         </p>
                         <p style={{ fontFamily: 'Georgia, serif', color: '#c89999', fontSize: '2rem', fontWeight: '700' }}>
-                          {finalScore}
+                          {averageScore}
+                        </p>
+                        <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontSize: '0.75rem' }}>
+                          {scores.length} judge{scores.length !== 1 ? 's' : ''} scored
                         </p>
                       </div>
                     </div>
 
-                    {projectScores.length > 0 ? (
+                    {scores.length > 0 ? (
                       <div className="space-y-4">
-                        {projectScores.map((score, idx) => (
-                          <div 
-                            key={idx}
-                            className="p-4 rounded-md"
-                            style={{ backgroundColor: '#f9f9f9', border: '1px solid #e5e5e5' }}
-                          >
-                            <p className="mb-3" style={{ fontFamily: 'Georgia, serif', color: '#333', fontWeight: '600' }}>
-                              {score.judgeName}
-                            </p>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                              {Object.entries(score.scores).map(([criterion, value]) => (
-                                <div key={criterion}>
-                                  <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontSize: '0.75rem', textTransform: 'capitalize' }}>
-                                    {criterion}
-                                  </p>
+                        {scores.map((score) => {
+                          const judge = typeof score.judgeId === 'object' ? score.judgeId : 
+                            judges.find(j => (j._id || j.id) === score.judgeId);
+                          const judgeName = judge 
+                            ? `${judge.firstName || ''} ${judge.lastName || ''}`.trim() || judge.email
+                            : 'Unknown Judge';
+                          const rubricScores = score.rubricScores || {};
+                          
+                          return (
+                            <div 
+                              key={score._id}
+                              className="p-4 rounded-md"
+                              style={{ backgroundColor: '#f9f9f9', border: '2px solid #e5e5e5' }}
+                            >
+                              <div className="flex items-center gap-3 mb-3">
+                                <div
+                                  className="w-10 h-10 rounded-full flex items-center justify-center text-white"
+                                  style={{ backgroundColor: '#c89999', fontFamily: 'Georgia, serif', fontWeight: '600' }}
+                                >
+                                  {getInitials(judgeName)}
+                                </div>
+                                <div>
                                   <p style={{ fontFamily: 'Georgia, serif', color: '#333', fontWeight: '600' }}>
-                                    {value}/10
+                                    {judgeName}
+                                  </p>
+                                  <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontSize: '0.875rem' }}>
+                                    Total: {score.totalScore?.toFixed(2) || '0.00'}/10
                                   </p>
                                 </div>
-                              ))}
+                              </div>
+                              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                {rubricScores.techStack && (
+                                  <div>
+                                    <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontSize: '0.75rem' }}>
+                                      Tech Stack
+                                    </p>
+                                    <p style={{ fontFamily: 'Georgia, serif', color: '#333', fontWeight: '600' }}>
+                                      {rubricScores.techStack.score}/10
+                                    </p>
+                                  </div>
+                                )}
+                                {rubricScores.design && (
+                                  <div>
+                                    <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontSize: '0.75rem' }}>
+                                      Design
+                                    </p>
+                                    <p style={{ fontFamily: 'Georgia, serif', color: '#333', fontWeight: '600' }}>
+                                      {rubricScores.design.score}/10
+                                    </p>
+                                  </div>
+                                )}
+                                {rubricScores.growthPotential && (
+                                  <div>
+                                    <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontSize: '0.75rem' }}>
+                                      Growth Potential
+                                    </p>
+                                    <p style={{ fontFamily: 'Georgia, serif', color: '#333', fontWeight: '600' }}>
+                                      {rubricScores.growthPotential.score}/10
+                                    </p>
+                                  </div>
+                                )}
+                                {rubricScores.presentation && (
+                                  <div>
+                                    <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontSize: '0.75rem' }}>
+                                      Presentation
+                                    </p>
+                                    <p style={{ fontFamily: 'Georgia, serif', color: '#333', fontWeight: '600' }}>
+                                      {rubricScores.presentation.score}/10
+                                    </p>
+                                  </div>
+                                )}
+                                {rubricScores.inspiration && (
+                                  <div>
+                                    <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontSize: '0.75rem' }}>
+                                      Inspiration
+                                    </p>
+                                    <p style={{ fontFamily: 'Georgia, serif', color: '#333', fontWeight: '600' }}>
+                                      {rubricScores.inspiration.score}/10
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontStyle: 'italic' }}>
                         No scores submitted yet
+                      </p>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {/* Comments Tab */}
+        {activeTab === 'comments' && (
+          <div className="space-y-4">
+            {projects.length === 0 ? (
+              <div className="bg-white rounded-lg p-8 text-center" style={{ border: '3px solid #000' }}>
+                <p style={{ fontFamily: 'Georgia, serif', color: '#666' }}>No projects found.</p>
+              </div>
+            ) : (
+              projects.map(project => {
+                const scores = projectScores[project._id] || [];
+                const comments = scores.filter(s => s.feedback && s.feedback.trim().length > 0);
+
+                return (
+                  <div key={project._id} className="bg-white rounded-lg p-6 relative" style={{ border: '3px solid #000' }}>
+                    <div className="mb-4">
+                      <h3 className="mb-1" style={{ fontFamily: 'Georgia, serif', color: '#333' }}>
+                        {project.name}
+                      </h3>
+                      <span 
+                        className="inline-block px-3 py-1 rounded text-sm"
+                        style={{ backgroundColor: '#f0f0f0', fontFamily: 'Georgia, serif', color: '#666' }}
+                      >
+                        {project.category}
+                      </span>
+                    </div>
+
+                    {comments.length > 0 ? (
+                      <div className="space-y-4">
+                        {comments.map((score) => {
+                          const judge = typeof score.judgeId === 'object' ? score.judgeId : 
+                            judges.find(j => (j._id || j.id) === score.judgeId);
+                          const judgeName = judge 
+                            ? `${judge.firstName || ''} ${judge.lastName || ''}`.trim() || judge.email
+                            : 'Unknown Judge';
+                          
+                          return (
+                            <div 
+                              key={score._id}
+                              className="p-4 rounded-md"
+                              style={{ backgroundColor: '#f9f9f9', border: '2px solid #c89999' }}
+                            >
+                              <div className="flex items-start gap-3 mb-3">
+                                <div
+                                  className="w-10 h-10 rounded-full flex items-center justify-center text-white flex-shrink-0"
+                                  style={{ backgroundColor: '#c89999', fontFamily: 'Georgia, serif', fontWeight: '600' }}
+                                >
+                                  {getInitials(judgeName)}
+                                </div>
+                                <div className="flex-1">
+                                  <p style={{ fontFamily: 'Georgia, serif', color: '#333', fontWeight: '600' }}>
+                                    {judgeName}
+                                  </p>
+                                  <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontSize: '0.875rem' }}>
+                                    Judge
+                                  </p>
+                                </div>
+                                {score.createdAt && (
+                                  <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontSize: '0.75rem' }}>
+                                    {new Date(score.createdAt).toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                              <p style={{ fontFamily: 'Georgia, serif', color: '#333', whiteSpace: 'pre-wrap' }}>
+                                {score.feedback}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p style={{ fontFamily: 'Georgia, serif', color: '#666', fontStyle: 'italic' }}>
+                        No comments submitted yet
                       </p>
                     )}
                   </div>

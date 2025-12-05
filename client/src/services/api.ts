@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Project, Judge } from '../types';
+import { Project, Judge, User } from '../types';
 
 // Use relative URL for development (Vite proxy) or full URL for production
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -64,12 +64,12 @@ export const projectsAPI = {
 
 // Judges API
 export const judgesAPI = {
-  getAll: async (): Promise<Judge[]> => {
+  getAll: async (): Promise<User[]> => {
     const response = await api.get('/judges');
     return response.data;
   },
 
-  getUnassigned: async (): Promise<Judge[]> => {
+  getUnassigned: async (): Promise<User[]> => {
     const response = await api.get('/judges/unassigned');
     return response.data;
   },
@@ -188,6 +188,19 @@ export const scoresAPI = {
 
   getLeaderboard: async () => {
     const response = await api.get('/scores/leaderboard');
+    return response.data;
+  },
+};
+
+// Assignments API
+export const assignmentsAPI = {
+  autoAssign: async () => {
+    const response = await api.post('/assignments/auto-assign');
+    return response.data;
+  },
+
+  getStats: async () => {
+    const response = await api.get('/assignments/stats');
     return response.data;
   },
 };
